@@ -39,7 +39,7 @@ nvm use 22
 git clone https://github.com/your-org/bookstore-ecommerce.git
 cd bookstore-ecommerce
 
-Create environment file
+Create environment file called .env.local keys are in file sent on discord
 echo "NEXT_PUBLIC_SUPABASE_URL=your-project-url" > .env.local
 echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key" >> .env.local
 
