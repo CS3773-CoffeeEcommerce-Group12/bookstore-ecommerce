@@ -17,6 +17,7 @@ node -v
 
 If it’s not v22.x, install or switch to Node 22 LTS:
 
+🪟 Windows
 # If you used nvm-windows:
 nvm install 22
 nvm use 22
@@ -27,17 +28,16 @@ Control Panel → Programs → Node.js → Uninstall, then reinstall from
 👉 https://nodejs.org
  (choose the green “22 LTS” version).
 
+🍎 macOS / 🐧 Linux
+Use nvm (recommended):
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 source ~/.bashrc  # or ~/.zshrc
 nvm install 22
 nvm use 22
 
-echo "22" > .nvmrc
-
 # Clone repository
 git clone https://github.com/your-org/bookstore-ecommerce.git
 cd bookstore-ecommerce
-
 
 Create environment file
 echo "NEXT_PUBLIC_SUPABASE_URL=your-project-url" > .env.local
@@ -48,10 +48,7 @@ npm install
 
 Start development server
 npm run dev
-
-
 Open 👉 http://localhost:3000
-
 
 
 💻 3️⃣ Technologies Used
@@ -80,9 +77,7 @@ RPC fn_checkout(cart_id, discount_code) runs checkout atomically:
 4. Decrement item.qty_available
 5. Clear cart
 
-
 Called from frontend:
-
 await supabase.rpc('fn_checkout', { cart_id, discount_code });
 
 
@@ -97,6 +92,7 @@ bookstore-ecommerce/
 ├─ tsconfig.json
 └─ next.config.ts
 
+
 👥 5️⃣ Team
 Name	Role	Focus
 Alanna	Auth + Items Schema	Supabase / Database
@@ -106,18 +102,23 @@ Travis	Auth Pages	User Flows
 Mark	Orders / Checkout UI	Layouts
 Christopher	Checkout Contract	Testing & Data
 
+
 🧾 6️⃣ Scripts
 Command	Description
 npm run dev	Start development server
 npm run build	Build for production
 npm run start	Run built app
 npm run lint	Lint code with ESLint
+
+
 🩵 7️⃣ Common Issues
 Problem	Fix
 npm: command not found	Node not added to PATH — reinstall Node 22 LTS
 next: not recognized	Run npm install again
 .env.local missing	Create file using commands above
 Port 3000 in use	Run npx kill-port 3000 or npm run dev -- -p 3001
+
+
 🧩 8️⃣ Deployment
 
 Deployed on Vercel — pushing to main automatically deploys to production.
