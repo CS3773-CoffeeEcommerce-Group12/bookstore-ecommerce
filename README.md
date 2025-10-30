@@ -123,11 +123,10 @@ Port 3000 in use	Run npx kill-port 3000 or npm run dev -- -p 3001
 
 Deployed on Vercel — pushing to main automatically deploys to production.
 
+```
 ⚖️ License
 
 MIT License — free for educational and collaborative use.
 
-
----
 
 
