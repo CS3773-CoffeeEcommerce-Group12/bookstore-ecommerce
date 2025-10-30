@@ -129,12 +129,4 @@ MIT License — free for educational and collaborative use.
 
 ---
 
-### 🔑 Summary for your teammates
-They only need to:
-1. **Install Node 22 LTS**  
-2. Run  
-   ```bash
-   git clone ...
-   npm install
-   npm run dev
 
