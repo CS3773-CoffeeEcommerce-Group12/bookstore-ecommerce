@@ -13,3 +13,5 @@ export type { TableProps } from './Table';
 
 export { Modal, ModalFooter } from './Modal';
 export type { ModalProps } from './Modal';
+
+export { ToastProvider, useToast } from './Toast';

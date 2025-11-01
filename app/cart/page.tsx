@@ -23,7 +23,7 @@ export default async function CartPage() {
   // Redirect to login if not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-purple-50 p-6 flex items-center justify-center">
         <Card padding="lg" className="max-w-md text-center bg-white/80 backdrop-blur-sm border border-purple-100">
           <svg className="w-16 h-16 mx-auto text-purple-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -47,7 +47,7 @@ export default async function CartPage() {
 
   if (cartErr) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-purple-50 p-6 flex items-center justify-center">
         <Card padding="lg" className="max-w-md text-center bg-white/80 backdrop-blur-sm border border-purple-100">
           <div className="text-red-600 mb-4">Error loading cart: {cartErr.message}</div>
           <Link href="/">
@@ -61,9 +61,9 @@ export default async function CartPage() {
   // If no cart exists, show empty state
   if (!cart) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6">
+      <div className="min-h-screen bg-purple-50 p-6">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 bg-clip-text text-transparent mb-6">🛒 Shopping Cart</h1>
+          <h1 className="text-3xl font-bold text-purple-600 mb-6">🛒 Shopping Cart</h1>
           <Card padding="lg" className="text-center bg-white/80 backdrop-blur-sm border border-purple-100">
             <div className="py-12">
               <svg className="w-24 h-24 mx-auto text-purple-200 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,7 +101,7 @@ export default async function CartPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-purple-50 p-6 flex items-center justify-center">
         <Card padding="lg" className="max-w-md text-center bg-white/80 backdrop-blur-sm border border-purple-100">
           <div className="text-red-600 mb-4">Error loading cart items: {error.message}</div>
           <Link href="/">
@@ -113,9 +113,9 @@ export default async function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-purple-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 bg-clip-text text-transparent mb-6">🛒 Shopping Cart</h1>
+        <h1 className="text-3xl font-bold text-purple-600 mb-6">🛒 Shopping Cart</h1>
         <CartClient initialItems={items || []} cartId={cart.id} />
       </div>
     </div>

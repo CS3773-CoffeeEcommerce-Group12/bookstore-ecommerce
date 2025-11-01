@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, Button, Input } from '@/components/ui';
 import Link from 'next/link';
 import { supabaseClient } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/Toast';
 
 interface CartItem {
   cart_id: number;
@@ -32,6 +33,7 @@ export function CartClient({ initialItems, cartId }: CartClientProps) {
   const [discountError, setDiscountError] = useState('');
   const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
   const [isUpdating, setIsUpdating] = useState<number | null>(null);
+  const { showToast } = useToast();
 
   // Calculate subtotal
   const subtotal = items.reduce(
@@ -58,7 +60,7 @@ export function CartClient({ initialItems, cartId }: CartClientProps) {
     
     // Don't allow qty greater than stock
     if (newQty > item.items.stock) {
-      alert(`Only ${item.items.stock} items available in stock`);
+      showToast(`Only ${item.items.stock} items available in stock`, 'warning');
       return;
     }
 
@@ -77,9 +79,11 @@ export function CartClient({ initialItems, cartId }: CartClientProps) {
       setItems(items.map(i => 
         i.item_id === itemId ? { ...i, qty: newQty } : i
       ));
+      
+      showToast('Quantity updated', 'success');
     } catch (error) {
       console.error('Error updating quantity:', error);
-      alert('Failed to update quantity');
+      showToast('Failed to update quantity', 'error');
     } finally {
       setIsUpdating(null);
     }
@@ -102,9 +106,10 @@ export function CartClient({ initialItems, cartId }: CartClientProps) {
 
       // Update local state
       setItems(items.filter(i => i.item_id !== itemId));
+      showToast('Item removed from cart', 'success');
     } catch (error) {
       console.error('Error removing item:', error);
-      alert('Failed to remove item');
+      showToast('Failed to remove item', 'error');
     } finally {
       setIsUpdating(null);
     }
@@ -114,6 +119,7 @@ export function CartClient({ initialItems, cartId }: CartClientProps) {
   const applyDiscount = async () => {
     if (!discountCode.trim()) {
       setDiscountError('Please enter a discount code');
+      showToast('Please enter a discount code', 'warning');
       return;
     }
 
@@ -140,28 +146,33 @@ export function CartClient({ initialItems, cartId }: CartClientProps) {
       if (!data.active) {
         setDiscountError('This discount code is no longer active');
         setDiscountPercent(0);
+        showToast('This discount code is no longer active', 'error');
         return;
       }
 
       if (data.max_uses && data.used_count >= data.max_uses) {
         setDiscountError('This discount code has reached its usage limit');
         setDiscountPercent(0);
+        showToast('This discount code has reached its usage limit', 'error');
         return;
       }
 
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
         setDiscountError('This discount code has expired');
         setDiscountPercent(0);
+        showToast('This discount code has expired', 'error');
         return;
       }
 
       // Apply discount
       setDiscountPercent(data.pct_off);
       setDiscountError('');
+      showToast(`Discount applied: ${data.pct_off}% off!`, 'success');
     } catch (error) {
       console.error('Error applying discount:', error);
       setDiscountError('Failed to apply discount code');
       setDiscountPercent(0);
+      showToast('Failed to apply discount code', 'error');
     } finally {
       setIsApplyingDiscount(false);
     }
@@ -189,13 +200,13 @@ export function CartClient({ initialItems, cartId }: CartClientProps) {
       {/* Cart Items */}
       <Card padding="none" className="bg-white/90 backdrop-blur-sm border border-purple-100">
         <div className="p-6 border-b border-purple-100">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Shopping Cart ({items.length} {items.length === 1 ? 'item' : 'items'})</h2>
+          <h2 className="text-xl font-bold text-purple-600">Shopping Cart ({items.length} {items.length === 1 ? 'item' : 'items'})</h2>
         </div>
         <div className="divide-y divide-purple-100">
           {items.map((item) => (
             <div key={item.item_id} className="p-6 flex flex-col sm:flex-row gap-4">
               {/* Item Image */}
-              <div className="w-full sm:w-32 h-32 flex-shrink-0 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-lg overflow-hidden">
+              <div className="w-full sm:w-32 h-32 flex-shrink-0 bg-purple-100 rounded-lg overflow-hidden">
                 {item.items.img_url ? (
                   <img 
                     src={item.items.img_url} 
@@ -252,7 +263,7 @@ export function CartClient({ initialItems, cartId }: CartClientProps) {
                   </Button>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                  <div className="text-lg font-bold text-purple-600">
                     ${((item.items.price_cents * item.qty) / 100).toFixed(2)}
                   </div>
                   <Button
@@ -282,7 +293,7 @@ export function CartClient({ initialItems, cartId }: CartClientProps) {
         </div>
 
         <Card padding="md" className="bg-white/90 backdrop-blur-sm border border-purple-100">
-          <h3 className="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">Order Summary</h3>
+          <h3 className="text-lg font-bold text-purple-600 mb-4">Order Summary</h3>
           
           {/* Discount Code Input */}
           <div className="mb-4 space-y-2">
@@ -329,14 +340,14 @@ export function CartClient({ initialItems, cartId }: CartClientProps) {
             </div>
             
             <div className="flex justify-between text-xl font-bold pt-2 border-t border-purple-200">
-              <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Total:</span>
-              <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">${(grandTotal / 100).toFixed(2)}</span>
+              <span className="text-purple-600">Total:</span>
+              <span className="text-purple-600">${(grandTotal / 100).toFixed(2)}</span>
             </div>
           </div>
 
           <div className="mt-6">
             <Link href="/checkout-ex">
-              <Button size="lg" className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md hover:shadow-lg">
+              <Button size="lg" className="w-full bg-purple-600 hover:bg-purple-700 shadow-md hover:shadow-lg">
                 Proceed to Checkout
               </Button>
             </Link>

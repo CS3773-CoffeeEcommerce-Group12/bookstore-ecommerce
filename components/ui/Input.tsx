@@ -29,8 +29,8 @@ export function Input({
       <input
         id={inputId}
         className={`
-          w-full px-4 py-2 rounded-lg border border-purple-200 
-          focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent
+          w-full px-4 py-2 rounded-lg border border-gray-300 
+          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
           disabled:bg-gray-100 disabled:cursor-not-allowed
           ${error ? 'border-red-500 focus:ring-red-500' : ''}
           ${className}
