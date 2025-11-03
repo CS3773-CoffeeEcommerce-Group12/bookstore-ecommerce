@@ -49,6 +49,7 @@ export default function AdminSummaryBar() {
   const cardStyle = "p-4 rounded-lg shadow-sm bg-muted/40";
 
   return (
+    
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
       <Card className={cardStyle}>
         <div className="flex items-center justify-between">
