@@ -21,6 +21,7 @@ export default function AdminDashboard() {
     { path: '/admin/discounts', label: 'Discounts' },
     { path: '/admin/users', label: 'Users' },
     { path: '/admin/orders', label: 'Orders' },
+    { path: '/admin/fulfillments', label: 'Fulfillments' },
   ];
 
   const isActive = (path: string, exact?: boolean) => {

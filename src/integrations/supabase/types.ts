@@ -193,6 +193,7 @@ export type Database = {
           created_at: string
           customer_email: string | null
           id: string
+          shipping_address_id: string | null
           total_cents: number
           user_id: string | null
         }
@@ -200,6 +201,7 @@ export type Database = {
           created_at?: string
           customer_email?: string | null
           id?: string
+          shipping_address_id?: string | null
           total_cents: number
           user_id?: string | null
         }
@@ -207,10 +209,80 @@ export type Database = {
           created_at?: string
           customer_email?: string | null
           id?: string
+          shipping_address_id?: string | null
           total_cents?: number
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_shipping_address_id_fkey"
+            columns: ["shipping_address_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_addresses"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      order_fulfillments: {
+        Row: {
+          created_at: string
+          fulfilled_at: string | null
+          fulfilled_by: string | null
+          id: string
+          item_id: string
+          order_id: string
+          shipped_at: string | null
+          shipped_qty: number
+          status: string
+          tracking_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          id?: string
+          item_id: string
+          order_id: string
+          shipped_at?: string | null
+          shipped_qty?: number
+          status?: string
+          tracking_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          id?: string
+          item_id?: string
+          order_id?: string
+          shipped_at?: string | null
+          shipped_qty?: number
+          status?: string
+          tracking_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_fulfillments_fulfilled_by_fkey"
+            columns: ["fulfilled_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_fulfillments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_order_item"
+            columns: ["order_id", "item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["order_id", "item_id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -226,6 +298,65 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      shipping_addresses: {
+        Row: {
+          city: string
+          country: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_default: boolean
+          label: string | null
+          line1: string
+          line2: string | null
+          phone: string | null
+          postal_code: string
+          profile_id: string
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          city: string
+          country: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_default?: boolean
+          label?: string | null
+          line1: string
+          line2?: string | null
+          phone?: string | null
+          postal_code: string
+          profile_id: string
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          country?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_default?: boolean
+          label?: string | null
+          line1?: string
+          line2?: string | null
+          phone?: string | null
+          postal_code?: string
+          profile_id?: string
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipping_addresses_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
