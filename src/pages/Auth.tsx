@@ -82,7 +82,7 @@ const Auth = () => {
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full border p-2"
+              className="w-full border rounded-lg p-2"
               required
             />
           </div>
@@ -94,7 +94,7 @@ const Auth = () => {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border p-2"
+            className="w-full border rounded-lg p-2"
             required
           />
         </div>
@@ -105,7 +105,7 @@ const Auth = () => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border p-2"
+            className="w-full border rounded-lg p-2"
             required
           />
         </div>
@@ -113,7 +113,7 @@ const Auth = () => {
         <button 
           type="submit" 
           disabled={isLoading}
-          className="w-full bg-black text-white p-2 disabled:opacity-50"
+          className="w-full bg-indigo-600 text-white rounded-lg p-2 disabled:opacity-50"
         >
           {isLoading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
         </button>
@@ -122,7 +122,7 @@ const Auth = () => {
       <div className="mt-6 pt-6 border-t">
         <button 
           onClick={handleGoogleSignIn}
-          className="w-full border p-2"
+          className="w-full text-indigo-600 border rounded-lg p-2"
         >
           Google Sign In
         </button>
