@@ -64,8 +64,9 @@ const BookDetail = () => {
   const addToCartMutation = useMutation({
     mutationFn: async () => {
       if (!user) {
+        toast.warning('Please sign in to add items to your cart.');
         navigate('/auth');
-        return;
+        throw new Error('User not signed in');
       }
 
       // Get or create cart
@@ -120,7 +121,11 @@ const BookDetail = () => {
       queryClient.invalidateQueries({ queryKey: ['cart-count'] });
       toast.success('Added to cart!');
     },
-    onError: () => {
+    onError: (error) => {
+      if (error.message == 'User not signed in') {
+        return;
+      }
+
       toast.error('Failed to add to cart');
     },
   });
@@ -159,7 +164,7 @@ const BookDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-16">
+    <div className="min-h-screen bg-purple-50 pt-16">
       {/* Hero Background */}
       <div
         className="h-40 bg-cover bg-center relative"
@@ -175,7 +180,7 @@ const BookDetail = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Back Button */}
         <Link to="/catalog">
-          <Button variant="ghost" className="mb-6 bg-background/80 hover:bg-background/90 backdrop-blur-sm text-foreground shadow-md">
+          <Button variant="ghost" className="mb-6 bg-background/80 hover:bg-background/90 backdrop-blur-sm text-foreground shadow-md rounded-lg">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Catalog
           </Button>
@@ -392,7 +397,7 @@ const BookDetail = () => {
               {/* Add to Cart Button */}
               <Button
                 size="lg"
-                className="w-full"
+                className="w-full bg-purple-600 text-white hover:bg-indigo-700 rounded-lg"
                 disabled={book.stock === 0}
                 onClick={() => addToCartMutation.mutate()}
               >

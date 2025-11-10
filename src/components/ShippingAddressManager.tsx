@@ -194,7 +194,8 @@ export default function ShippingAddressManager() {
 
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); setIsFormOpen(true); }}>
+            <Button onClick={() => { resetForm(); setIsFormOpen(true); }}
+              className="rounded-lg bg-purple-600">
               <Plus className="h-4 w-4 mr-2" />
               Add Address
             </Button>
@@ -335,12 +336,14 @@ export default function ShippingAddressManager() {
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={resetForm}>
+                <Button type="button" variant="outline" onClick={resetForm}
+                  className="rounded-lg">
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={createAddressMutation.isPending || updateAddressMutation.isPending}
+                  className="rounded-lg bg-purple-600 text-white hover:bg-purple-700 px-4 py-2"
                 >
                   {editingAddress ? 'Update Address' : 'Add Address'}
                 </Button>
@@ -414,7 +417,8 @@ export default function ShippingAddressManager() {
             <p className="text-muted-foreground mb-4">
               Add your first shipping address to get started
             </p>
-            <Button onClick={() => { resetForm(); setIsFormOpen(true); }}>
+            <Button onClick={() => { resetForm(); setIsFormOpen(true); }}
+              className="rounded-lg bg-purple-600">
               <Plus className="h-4 w-4 mr-2" />
               Add Your First Address
             </Button>
