@@ -6,8 +6,10 @@ import { Item } from "@/types";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useAuth } from '@/contexts/AuthContext';
 
 const Catalog = () => {
+  const { isAdmin } = useAuth();
   const [filters, setFilters] = useState({
     q: "",
     sort: "created_at",
@@ -60,22 +62,24 @@ const Catalog = () => {
     return <div className="p-6 text-red-600">Error: {error.message}</div>;
 
   return (
-    <main className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+    <main className="min-h-screen bg-purple-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            <h1 className="text-4xl font-bold text-purple-600 mb-2">
               📚 Book Catalog
             </h1>
             <p className="text-gray-600">Discover your next great read</p>
           </div>
-          <Link
-            to="/admin"
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-          >
-            Admin Dashboard
-          </Link>
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+            >
+              Admin Dashboard
+            </Link>
+          )}
         </div>
 
         {/* Filters */}
@@ -125,7 +129,7 @@ const Catalog = () => {
 
             <Button
               type="submit"
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-indigo-700"
             >
               Apply Filters
             </Button>
@@ -204,7 +208,7 @@ const Catalog = () => {
                     <div className="pt-2">
                       <Link
                         to={`/book/${item.id}`}
-                        className="block w-full text-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                        className="block w-full text-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
                       >
                         View Details
                       </Link>
@@ -240,7 +244,7 @@ const Catalog = () => {
               onClick={() =>
                 setFilters({ q: "", sort: "created_at", available: "0" })
               }
-              className="bg-indigo-600 text-white hover:bg-indigo-700"
+              className="bg-purple-600 text-white hover:bg-indigo-700 rounded-lg"
             >
               Clear Filters
             </Button>

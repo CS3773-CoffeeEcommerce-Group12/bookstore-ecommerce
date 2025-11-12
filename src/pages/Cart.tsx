@@ -95,7 +95,7 @@ const Cart = () => {
             You need to be logged in to access your shopping cart.
           </p>
           <Link to="/auth">
-            <Button size="lg" className="w-full">
+            <Button size="lg" className="w-full rounded-lg">
               Go to Login
             </Button>
           </Link>
@@ -145,7 +145,7 @@ const Cart = () => {
             </h2>
             <p className="text-gray-500 mb-6">Add some books to get started!</p>
             <Link to="/catalog">
-              <Button size="lg">Browse Books</Button>
+              <Button size="lg" className="rounded-lg">Browse Books</Button>
             </Link>
           </Card>
         </div>
@@ -275,7 +275,7 @@ const Cart = () => {
 
               <Button
                 size="lg"
-                className="w-full mb-4 bg-purple-600 hover:bg-purple-700 text-white"
+                className="w-full mb-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
                 onClick={() => navigate("/checkout")}
               >
                 Proceed to Checkout
@@ -284,7 +284,7 @@ const Cart = () => {
               <Link to="/catalog">
                 <Button
                   variant="ghost"
-                  className="w-full text-purple-600 hover:bg-purple-50"
+                  className="w-full text-purple-600 hover:bg-purple-50 rounded-lg"
                 >
                   Continue Shopping
                 </Button>
