@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom';
+import { UserCheck } from 'lucide-react';
 import AdminSummaryBar from '@/components/admin/AdminSummaryBar';
 
 export default function AdminDashboard() {
@@ -33,32 +34,37 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">Admin</h1>
+    <div className="min-h-screen bg-purple-50 pt-8">
+      <div className="max-w-7xl mx-auto p-8">
+        <h1 className="text-3xl text-purple-600 font-bold mb-8 flex items-center gap-3">
+          <UserCheck className="h-10 w-10 text-foreground" />
+          <span className="text-purple-600">Admin</span>
+        </h1>
 
-      <AdminSummaryBar />
+        <AdminSummaryBar />
 
-      <div className="flex gap-6">
-        <aside className="w-48 border-r pr-6">
-          <nav>
-            {navItems.map((item) => {
-              const active = isActive(item.path, item.exact);
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`block px-2 py-1 mb-1 ${active ? 'bg-black text-white' : ''}`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
+        <div className="flex gap-6">
+          <aside className="w-48 border-r pr-6">
+            <nav>
+              {navItems.map((item) => {
+                const active = isActive(item.path, item.exact);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`block px-2 py-1 mb-1 ${active ? 'bg-black text-white' : ''}`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </aside>
 
-        <main className="flex-1">
-          <Outlet />
-        </main>
+          <main className="flex-1">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   );

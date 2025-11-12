@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { fulfillmentService } from '@/services/fulfillmentService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +16,7 @@ import {
   ChevronUp, 
   Truck, 
   CheckCircle, 
+  CalendarDays,
   Clock, 
   MapPin,
   Calendar,
@@ -522,18 +524,28 @@ const Orders = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center pt-16">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Please sign in</h2>
-          <p className="text-muted-foreground">Sign in to view your orders</p>
-        </div>
+        <div className="min-h-screen bg-purple-50 p-6 flex items-center justify-center">        
+          <Card className="max-w-md text-center bg-white/80 backdrop-blur-sm border border-purple-100 p-8">
+            <Calendar className="h-20 w-20 mx-auto mb-6 text-purple-300" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Sign in to view your orders
+            </h2>
+            <p className="text-gray-600 mb-6">
+              You need to be logged in to access your order history.
+            </p>
+            <Link to="/auth">
+              <Button size="lg" className="w-full rounded-lg">
+                  Go to Login
+              </Button>
+            </Link>
+          </Card>
       </div>
     );
   }
 
   if (loadingMyOrders) {
     return (
-      <div className="min-h-screen bg-background pt-16">
+      <div className="min-h-screen bg-purple-50 pt-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
@@ -546,10 +558,13 @@ const Orders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-16">
+    <div className="min-h-screen bg-purple-50 pt-16">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl font-bold text-foreground mb-8">
-          {isAdmin ? 'Orders Management' : 'My Orders'}
+        <h1 className="text-4xl font-bold mb-8 flex items-center gap-3">
+          <CalendarDays className="h-10 w-10" />
+          <span className="text-purple-700">
+            {isAdmin ? 'Orders Management' : 'My Orders'}
+          </span>
         </h1>
 
         {isAdmin ? (

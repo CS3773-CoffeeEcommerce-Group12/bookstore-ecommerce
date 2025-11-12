@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { LogIn } from 'lucide-react';
+
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -57,7 +59,11 @@ const Auth = () => {
 
   return (
     <div className="max-w-md mx-auto p-8 mt-20">
-      <h1 className="text-2xl font-bold mb-8">Auth</h1>
+      <h1 className="text-2xl font-bold mb-8 flex items-center gap-3">
+        <LogIn className="h-8 w-8 text-foreground" />
+        <span className="text-purple-600">Log-In</span>
+      </h1>
+
 
       <div className="mb-4 flex gap-4 border-b pb-2">
         <button 
@@ -113,7 +119,7 @@ const Auth = () => {
         <button 
           type="submit" 
           disabled={isLoading}
-          className="w-full bg-indigo-600 text-white rounded-lg p-2 disabled:opacity-50"
+          className="w-full bg-purple-600 text-white rounded-lg p-2 disabled:opacity-50"
         >
           {isLoading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
         </button>
@@ -122,7 +128,7 @@ const Auth = () => {
       <div className="mt-6 pt-6 border-t">
         <button 
           onClick={handleGoogleSignIn}
-          className="w-full text-indigo-600 border rounded-lg p-2"
+          className="w-full text-purple-600 border rounded-lg p-2"
         >
           Google Sign In
         </button>
