@@ -195,7 +195,7 @@ export default function ShippingAddressManager() {
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => { resetForm(); setIsFormOpen(true); }}
-              className="rounded-lg bg-purple-600">
+              className="rounded-lg bg-purple-600 hover:bg-indigo-700">
               <Plus className="h-4 w-4 mr-2" />
               Add Address
             </Button>
@@ -418,7 +418,7 @@ export default function ShippingAddressManager() {
               Add your first shipping address to get started
             </p>
             <Button onClick={() => { resetForm(); setIsFormOpen(true); }}
-              className="rounded-lg bg-purple-600">
+              className="rounded-lg bg-purple-600 hover:bg-indigo-700">
               <Plus className="h-4 w-4 mr-2" />
               Add Your First Address
             </Button>

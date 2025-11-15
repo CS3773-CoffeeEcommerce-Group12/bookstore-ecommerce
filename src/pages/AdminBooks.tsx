@@ -244,7 +244,7 @@ export default function AdminBooks() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 />
-                <Button onClick={handleSearch} disabled={searching}>
+                <Button onClick={handleSearch} disabled={searching} className="rounded-lg">
                   {searching ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -417,7 +417,7 @@ export default function AdminBooks() {
                       <Button
                         onClick={handleUpdateBook}
                         disabled={updateBookMutation.isPending}
-                        className="flex-1"
+                        className="flex-1 bg-purple-600 hover:bg-indigo-700 rounded-lg"
                       >
                         <Edit className="h-4 w-4 mr-2" />
                         Update Book
@@ -428,6 +428,7 @@ export default function AdminBooks() {
                           setEditingBook(null);
                           setFormData({ price_cents: 2999, stock: 10, active: true, featured: false, description: '' });
                         }}
+                        className="rounded-lg"
                       >
                         Cancel
                       </Button>
@@ -529,7 +530,7 @@ export default function AdminBooks() {
                       <Button
                         onClick={handleAddBook}
                         disabled={addBookMutation.isPending}
-                        className="flex-1"
+                        className="flex-1 rounded-lg bg-purple-600 hover:bg-indigo-700"
                       >
                         <Plus className="h-4 w-4 mr-2" />
                         Add to Catalog
@@ -540,6 +541,7 @@ export default function AdminBooks() {
                           setSelectedBook(null);
                           setFormData({ price_cents: 2999, stock: 10, active: true, featured: false, description: '' });
                         }}
+                        className="rounded-lg"
                       >
                         Cancel
                       </Button>
@@ -614,6 +616,7 @@ export default function AdminBooks() {
                             size="icon"
                             onClick={() => handleEditBook(book)}
                             title="Edit book"
+                            className="rounded-lg"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -626,6 +629,7 @@ export default function AdminBooks() {
                                 deleteBookMutation.mutate(book.id);
                               }
                             }}
+                            className="rounded-lg"
                             disabled={deleteBookMutation.isPending}
                             title="Delete book"
                           >

@@ -2,11 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart2, BookOpen, ShoppingCart, Users, DollarSign } from 'lucide-react';
+import { LayoutGrid, BarChart2, BookOpen, ShoppingCart, Users, DollarSign } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChartContainer, ChartTooltipContent, ChartLegendContent } from '@/components/ui/chart';
 import { LineChart, Line, XAxis,YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { startOfWeek, startOfMonth, addDays, addWeeks, addMonths, format, isBefore } from 'date-fns';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AdminOverview() {
   const { data: stats, isLoading } = useQuery({
@@ -117,7 +118,10 @@ export default function AdminOverview() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Dashboard Overview</h2>
+        <div className="flex items-center gap-2 mb-2">
+          <LayoutGrid className="h-7 w-7 text-black" />
+          <h2 className="text-2xl font-bold">Dashboard Overview</h2>
+        </div>
         <p className="text-muted-foreground">Quick stats about your bookstore</p>
       </div>
 
@@ -143,7 +147,7 @@ export default function AdminOverview() {
       <Card className="mt-8">
         <CardHeader>
         <div className="flex gap-2">
-          <BarChart2 className="h-7 w-7 text-muted-foreground" />
+          <BarChart2 className="h-7 w-7 text-black" />
           <span className="text-lg font-semibold">Order Stats</span>
         </div>
         </CardHeader>
@@ -169,21 +173,19 @@ export default function AdminOverview() {
               </ChartContainer>
             )}
           </div>
-          <div className="flex flex-col items-center justify-center ml-2 space-y-2 pr-20 pb-32">
-            {['daily', 'weekly', 'monthly'].map((v) => (
-              <button
-                key={v}
-                onClick={() => setView(v as typeof view)}
-                className={`px-4 py-1 text-base rounded-lg border w-28 ${
-                  view === v
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-muted hover:bg-muted/70 text-muted-foreground'
-                }`}
-              >
-                {v.charAt(0).toUpperCase() + v.slice(1)}
-              </button>
-            ))}
-          </div>
+          <Tabs defaultValue={view} onValueChange={(v) => setView(v as typeof view)}>
+            <TabsList className="translate-x-[-36px] -translate-y-40">
+              {(['daily', 'weekly', 'monthly'] as const).map((v) => (
+                <TabsTrigger
+                  key={v}
+                  value={v}
+                  className="w-full bg-transparent text-black data-[state=active]:bg-gray-600 data-[state=active]:text-white"
+                >
+                  {v.charAt(0).toUpperCase() + v.slice(1)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
