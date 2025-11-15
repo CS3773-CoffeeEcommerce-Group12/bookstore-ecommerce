@@ -52,7 +52,7 @@ export default function AdminDashboard() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`block px-2 py-1 mb-1 ${active ? 'bg-black text-white' : ''}`}
+                    className={`block px-2 py-1 mb-1 ${active ? 'bg-purple-600 text-white rounded-lg' : ''}`}
                   >
                     {item.label}
                   </Link>
