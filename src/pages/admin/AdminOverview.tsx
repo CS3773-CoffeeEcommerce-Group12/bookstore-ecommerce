@@ -1,8 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, ShoppingCart, Users, DollarSign } from 'lucide-react';
+import { BarChart2, BookOpen, ShoppingCart, Users, DollarSign } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ChartContainer, ChartTooltipContent, ChartLegendContent } from '@/components/ui/chart';
+import { LineChart, Line, XAxis,YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { startOfWeek, startOfMonth, addDays, addWeeks, addMonths, format, isBefore } from 'date-fns';
 
 export default function AdminOverview() {
   const { data: stats, isLoading } = useQuery({
@@ -10,10 +14,11 @@ export default function AdminOverview() {
     queryFn: async () => {
       const [booksResult, ordersResult, usersResult] = await Promise.all([
         supabase.from('items').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('total_cents'),
+        supabase.from('orders').select('total_cents, created_at'),
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
       ]);
 
+      const orders = ordersResult.data || [];
       const totalRevenue = ordersResult.data?.reduce((sum, order) => sum + order.total_cents, 0) || 0;
 
       return {
@@ -21,6 +26,7 @@ export default function AdminOverview() {
         totalOrders: ordersResult.data?.length || 0,
         totalUsers: usersResult.count || 0,
         totalRevenue,
+        orders,
       };
     },
   });
@@ -51,6 +57,52 @@ export default function AdminOverview() {
       color: 'text-primary',
     },
   ];
+
+  const [view, setView] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+
+  const orderDates = stats?.orders?.map(o => new Date(o.created_at)) || [];
+  const startDate = orderDates.length ? new Date(Math.min(...orderDates.map(d => d.getTime()))) : new Date();
+  const endDate = new Date();
+
+  const groupKeyFn = (date: Date) => {
+    if (view === 'weekly') return format(startOfWeek(date), 'yyyy-MM-dd');
+    if (view === 'monthly') return format(startOfMonth(date), 'yyyy-MM');
+    return format(date, 'yyyy-MM-dd');
+  };
+
+  const groupedCounts = stats?.orders?.reduce((acc: Record<string, number>, order) => {
+    const key = groupKeyFn(new Date(order.created_at));
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {}) || {};
+
+  const allBuckets: string[] = [];
+  let cursor = new Date(startDate);
+
+  while (isBefore(cursor, endDate) || format(cursor, 'yyyy-MM-dd') === format(endDate, 'yyyy-MM-dd')) {
+    const key = groupKeyFn(cursor);
+    if (!allBuckets.includes(key)) {
+      allBuckets.push(key);
+    }
+    cursor =
+      view === 'weekly'
+        ? addWeeks(cursor, 1)
+        : view === 'monthly'
+        ? addMonths(cursor, 1)
+        : addDays(cursor, 1);
+  }
+
+  const chartData = allBuckets.map(date => ({
+    date,
+    orders: groupedCounts[date] || 0,
+  }));
+
+  const chartConfig = {
+    orders: {
+      label: 'Orders',
+      color: '#9333ea',
+    },
+  };
 
   if (isLoading) {
     return (
@@ -87,6 +139,53 @@ export default function AdminOverview() {
           );
         })}
       </div>
+
+      <Card className="mt-8">
+        <CardHeader>
+        <div className="flex gap-2">
+          <BarChart2 className="h-7 w-7 text-muted-foreground" />
+          <span className="text-lg font-semibold">Order Stats</span>
+        </div>
+        </CardHeader>
+        <CardContent className="h-96 w-full flex items-center">
+          <div className="flex-1 h-full">
+            {chartData.length === 0 ? (
+              <Skeleton className="h-full" />
+            ) : (
+              <ChartContainer config={chartConfig} className="h-full">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip content={<ChartTooltipContent />} />
+                  <Legend content={<ChartLegendContent />} />
+                  <Line
+                    type="monotone"
+                    dataKey="orders"
+                    stroke="var(--color-orders)"
+                    dot={false}
+                  />
+                </LineChart>
+              </ChartContainer>
+            )}
+          </div>
+          <div className="flex flex-col items-center justify-center ml-2 space-y-2 pr-20 pb-32">
+            {['daily', 'weekly', 'monthly'].map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v as typeof view)}
+                className={`px-4 py-1 text-base rounded-lg border w-28 ${
+                  view === v
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-muted hover:bg-muted/70 text-muted-foreground'
+                }`}
+              >
+                {v.charAt(0).toUpperCase() + v.slice(1)}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
