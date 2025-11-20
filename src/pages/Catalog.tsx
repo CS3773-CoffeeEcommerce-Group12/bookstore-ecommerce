@@ -103,7 +103,8 @@ const Catalog = () => {
               id="sort"
               name="sort"
               aria-label="Sort books by"
-              defaultValue={filters.sort}
+              value={filters.sort}
+              onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
               className="min-w-[180px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             >
               <option value="created_at">Newest First</option>
@@ -120,7 +121,8 @@ const Catalog = () => {
               id="available"
               name="available"
               aria-label="Filter by availability"
-              defaultValue={filters.available}
+              value={filters.available}
+              onChange={(e) => setFilters({ ...filters, available: e.target.value })}
               className="min-w-[160px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             >
               <option value="0">All Books</option>

@@ -1,17 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { ArrowLeft, ShoppingCart, BookOpen, Calendar, User, Hash, FileText, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, BookOpen, Calendar, User, Hash, FileText, ChevronDown, Heart, Share2, Facebook, Instagram, ZoomIn, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { Item } from '@/types';
 import { bookService } from '@/services/bookService';
+
+// Custom X (formerly Twitter) icon
+const XIcon = ({ size = 24, className = "" }: { size?: number; className?: string }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+  </svg>
+);
 
 const BookDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +33,8 @@ const BookDetail = () => {
   const queryClient = useQueryClient();
   const [quantity, setQuantity] = useState(1);
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+  const [isImageZoomed, setIsImageZoomed] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
 
   const { data: book, isLoading } = useQuery({
     queryKey: ['item', id],
@@ -60,6 +75,23 @@ const BookDetail = () => {
     },
     enabled: !!id,
   });
+
+  // Track recently viewed books and check wishlist status
+  useEffect(() => {
+    if (book) {
+      // Track recently viewed
+      const recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+      const bookData = { id: book.id, name: book.name, price_cents: book.price_cents, img_url: book.img_url, author: book.author };
+      
+      const filtered = recentlyViewed.filter((b: any) => b.id !== book.id);
+      const updated = [bookData, ...filtered].slice(0, 6);
+      localStorage.setItem('recentlyViewed', JSON.stringify(updated));
+      
+      // Check if in wishlist
+      const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+      setIsFavorited(wishlist.some((b: any) => b.id === book.id));
+    }
+  }, [book]);
 
   const addToCartMutation = useMutation({
     mutationFn: async () => {
@@ -130,6 +162,51 @@ const BookDetail = () => {
     },
   });
 
+  const handleShare = (platform: string) => {
+    const url = window.location.href;
+    const text = `Check out ${book?.name}!`;
+    
+    const shareUrls: Record<string, string> = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+      instagram: 'https://www.instagram.com/'
+    };
+
+    if (platform === 'instagram') {
+      window.open(shareUrls[platform], '_blank');
+      toast.info('Copy the link and share on Instagram!');
+    } else {
+      window.open(shareUrls[platform], '_blank', 'width=600,height=400');
+      toast.info('Opening share dialog...');
+    }
+  };
+
+  const toggleFavorite = () => {
+    if (!book) return;
+    
+    const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+    const bookData = { id: book.id, name: book.name, price_cents: book.price_cents, img_url: book.img_url, author: book.author };
+    
+    if (isFavorited) {
+      const filtered = wishlist.filter((b: any) => b.id !== book.id);
+      localStorage.setItem('wishlist', JSON.stringify(filtered));
+      setIsFavorited(false);
+      toast.success('Removed from wishlist!');
+    } else {
+      const updated = [bookData, ...wishlist];
+      localStorage.setItem('wishlist', JSON.stringify(updated));
+      setIsFavorited(true);
+      toast.success('Added to wishlist!');
+    }
+  };
+
+  // Mock review data (you can replace with real data from database)
+  const mockReviews = [
+    { id: 1, name: 'Sarah M.', rating: 5, date: '2024-11-15', text: `Absolutely loved "${book?.name}"! The writing is captivating and the story kept me hooked from start to finish.` },
+    { id: 2, name: 'John D.', rating: 4, date: '2024-11-10', text: `"${book?.name}" exceeded my expectations. Well-written and engaging throughout.` },
+    { id: 3, name: 'Emily R.', rating: 5, date: '2024-11-05', text: `One of the best books I've read this year! Highly recommend "${book?.name}".` }
+  ];
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background pt-16">
@@ -165,22 +242,10 @@ const BookDetail = () => {
 
   return (
     <div className="min-h-screen bg-purple-50 pt-16">
-      {/* Hero Background */}
-      <div
-        className="h-40 bg-cover bg-center relative"
-        style={{
-          backgroundImage: `url(${book.img_url || '/placeholder.svg'})`,
-          filter: 'blur(20px)',
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-l from-background via-background/95 to-background/90" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-4 relative z-10">
         {/* Back Button */}
         <Link to="/catalog">
-          <Button variant="ghost" className="mb-6 bg-background/80 hover:bg-background/90 backdrop-blur-sm text-foreground shadow-md rounded-lg">
+          <Button variant="ghost" className="mb-4 bg-background/80 hover:bg-background/90 backdrop-blur-sm text-foreground shadow-md rounded-lg">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Catalog
           </Button>
@@ -190,16 +255,75 @@ const BookDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
           {/* Column 1: Book Cover (3 columns) */}
           <div className="lg:col-span-3">
-            <div className="relative group">
+            <div className="relative group cursor-pointer" onClick={() => setIsImageZoomed(true)}>
               <div className="absolute -inset-4 bg-accent/20 rounded-2xl blur-xl group-hover:bg-accent/30 transition-all duration-500" />
               <img
                 src={book.img_url || '/placeholder.svg'}
                 alt={book.name}
                 className="relative w-full object-cover rounded-xl shadow-medium transform group-hover:scale-105 transition-transform duration-500"
               />
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity rounded-xl flex items-center justify-center">
+                <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity" size={40} />
+              </div>
               <p className="text-center text-base text-muted-foreground mt-4">by {book.author || 'Unknown Author'}</p>
             </div>
+            
+            {/* Social Sharing Buttons */}
+            <div className="mt-6 space-y-3">
+              <button
+                onClick={toggleFavorite}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
+                  isFavorited
+                    ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
+                    : 'border-2 border-gray-300 text-gray-700 hover:border-pink-500'
+                }`}
+              >
+                <Heart
+                  size={20}
+                  className={isFavorited ? 'fill-current' : ''}
+                />
+                {isFavorited ? 'In Wishlist' : 'Add to Wishlist'}
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleShare('facebook')}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all"
+                >
+                  <Facebook size={18} />
+                  <span className="text-sm font-medium">Share</span>
+                </button>
+                <button
+                  onClick={() => handleShare('twitter')}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-black to-gray-800 text-white rounded-lg hover:from-gray-800 hover:to-gray-900 transition-all"
+                >
+                  <XIcon size={18} />
+                  <span className="text-sm font-medium">Post</span>
+                </button>
+                <button
+                  onClick={() => handleShare('instagram')}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white rounded-lg hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 transition-all"
+                >
+                  <Instagram size={18} />
+                  <span className="text-sm font-medium">Post</span>
+                </button>
+              </div>
+            </div>
           </div>
+
+          {/* Image Zoom Modal */}
+          <Dialog open={isImageZoomed} onOpenChange={setIsImageZoomed}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>{book.name}</DialogTitle>
+              </DialogHeader>
+              <img
+                src={book.img_url || '/placeholder.svg'}
+                alt={book.name}
+                className="w-full h-auto rounded-lg"
+              />
+            </DialogContent>
+          </Dialog>
 
           {/* Column 2: Title, Description, and Details (6 columns) */}
           <div className="lg:col-span-6 space-y-4">
@@ -350,7 +474,7 @@ const BookDetail = () => {
               {/* Total */}
               <div className="flex justify-between items-center pt-2">
                 <span className="text-lg font-bold text-foreground">Total</span>
-                <span className="text-2xl font-bold text-accent">
+                <span className="text-2xl font-bold text-gray-900">
                   ${(((book.price_cents * quantity) / 100) * 1.08).toFixed(2)}
                 </span>
               </div>
@@ -408,18 +532,96 @@ const BookDetail = () => {
           </div>
         </div>
 
+        {/* Customer Reviews Section */}
+        <section className="mb-12">
+          <div className="bg-card/50 rounded-xl border border-border p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-foreground">Customer Reviews</h2>
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      size={20}
+                      className={star <= 4.67 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                    />
+                  ))}
+                </div>
+                <span className="text-lg font-semibold text-foreground">4.67</span>
+                <span className="text-sm text-muted-foreground">({mockReviews.length} reviews)</span>
+              </div>
+            </div>
+
+            {/* Rating Distribution */}
+            <div className="mb-8 space-y-2">
+              {[5, 4, 3, 2, 1].map((rating) => {
+                const count = mockReviews.filter(r => r.rating === rating).length;
+                const percentage = (count / mockReviews.length) * 100;
+                return (
+                  <div key={rating} className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-foreground w-12">{rating} star</span>
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-yellow-400 h-2 rounded-full transition-all"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-muted-foreground w-8">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Individual Reviews */}
+            <div className="space-y-6">
+              {mockReviews.map((review) => (
+                <div key={review.id} className="border-b border-border pb-6 last:border-b-0 last:pb-0">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-semibold text-foreground">{review.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={16}
+                              className={star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(review.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-foreground/80 leading-relaxed">{review.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Related Books */}
         {relatedBooks.length > 0 && (
           <section className="pb-12">
-            <h2 className="text-2xl font-bold mb-6">You May Also Like</h2>
+            <h2 className="text-2xl font-bold mb-6 text-foreground">You May Also Like</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
               {relatedBooks.map((item) => (
                 <Link key={item.id} to={`/book/${item.id}`}>
-                  <div className="border p-2">
-                    {item.img_url && <img src={item.img_url} alt={item.name} className="w-full h-40 object-cover mb-2" />}
-                    <div className="font-bold truncate">{item.name}</div>
-                    <div className="text-sm truncate">{item.author || 'Unknown'}</div>
-                    <div className="font-bold">${(item.price_cents / 100).toFixed(2)}</div>
+                  <div className="group bg-card/50 border border-border rounded-lg p-4 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    {item.img_url && (
+                      <div className="overflow-hidden rounded-md mb-3">
+                        <img 
+                          src={item.img_url} 
+                          alt={item.name} 
+                          className="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-300" 
+                        />
+                      </div>
+                    )}
+                    <h3 className="font-bold text-foreground truncate group-hover:text-accent transition-colors">{item.name}</h3>
+                    <p className="text-sm text-muted-foreground truncate mt-1">{item.author || 'Unknown'}</p>
+                    <p className="font-bold text-gray-900 mt-2">${(item.price_cents / 100).toFixed(2)}</p>
                   </div>
                 </Link>
               ))}
