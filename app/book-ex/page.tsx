@@ -2,6 +2,7 @@ import { supabaseServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { BookDetailClient } from './BookDetailClient';
 
 // Types
 type Search = Record<string, string | string[]>;
@@ -13,6 +14,7 @@ interface BookItem {
   stock: number;
   img_url?: string;
   active: boolean;
+  created_at?: string;
 }
 
 /**
@@ -67,40 +69,53 @@ async function BookDetails({ id }: { id: string }) {
 
   if (queryError || !item) {
     return (
-      <div className="p-6">
-        <div className="text-red-600 mb-4">
-          {queryError 
-            ? "Error loading book details" 
-            : "Book not found or not available"}
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="max-w-md text-center bg-white rounded-lg shadow-md p-8">
+          <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            {queryError ? "Error Loading Book" : "Book Not Found"}
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {queryError 
+              ? "There was an error loading this book. Please try again." 
+              : "This book is not available or doesn't exist."}
+          </p>
+          {!user && (
+            <p className="text-sm text-gray-500 mb-4">
+              Try signing in to view more items.
+            </p>
+          )}
+          <Link 
+            href="/" 
+            className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+          >
+            Return to Catalog
+          </Link>
         </div>
-        <div className="text-sm text-gray-600 mb-4">
-          {!user && "Try signing in to view more items."}
-        </div>
-        <Link href="/" className="text-blue-600 hover:underline">
-          Return to Catalog
-        </Link>
       </div>
     );
   }
 
+  // Fetch related books (same price range or recently added)
+  const priceRange = 500; // $5 range
+  const { data: relatedBooks } = await s
+    .from('items')
+    .select('id,name,price_cents,img_url,stock')
+    .neq('id', item.id)
+    .eq('active', true)
+    .gte('price_cents', item.price_cents - priceRange)
+    .lte('price_cents', item.price_cents + priceRange)
+    .limit(4);
+
   return (
-    <form action={addToCart} className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">{item.name}</h1>
-      <p>${(item.price_cents / 100).toFixed(2)}</p>
-      <input type="hidden" name="item_id" value={item.id} />
-      <label className="block">
-        Qty:
-        <input 
-          type="number" 
-          name="qty" 
-          defaultValue={1} 
-          min={1} 
-          max={item.stock}
-          className="ml-2 border rounded px-2 py-1 w-24" 
-        />
-      </label>
-      <button className="rounded-xl border px-3 py-2">Add to Cart</button>
-    </form>
+    <BookDetailClient 
+      item={item} 
+      relatedBooks={relatedBooks || []}
+      isAuthenticated={!!user}
+      addToCartAction={addToCart}
+    />
   );
 }
 
