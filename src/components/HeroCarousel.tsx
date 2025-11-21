@@ -155,7 +155,7 @@ export const HeroCarousel = () => {
                       <div className="pt-1">
                         <div className="flex items-center gap-3">
                           <span className="text-3xl font-bold text-accent">
-                            {(book.price_cents / 100).toFixed(2)}
+                            ${(book.price_cents / 100).toFixed(2)}
                           </span>
                         </div>
 

@@ -82,12 +82,10 @@ const Catalog = () => {
 
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="bg-gradient-warm p-3 rounded-xl">
-              <BookOpen className="h-8 w-8 text-accent-foreground" />
-            </div>
+          <div className="flex items-center gap-3">
+            <BookOpen className="h-8 w-8 text-accent" />
             <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
+              <h1 className="text-4xl font-bold text-foreground">
                 Book Catalog
               </h1>
               <p className="text-muted-foreground">

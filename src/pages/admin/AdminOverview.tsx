@@ -226,39 +226,6 @@ export default function AdminOverview() {
         </div>
       </div>
 
-      {/* Data Management Card */}
-      <Card className="border-destructive/50">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            <CardTitle className="text-destructive">Data Management</CardTitle>
-          </div>
-          <CardDescription>
-            Permanently delete data from your database. These actions cannot be undone.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              variant="destructive"
-              onClick={handleClearOrders}
-              disabled={clearOrdersMutation.isPending || (stats?.totalOrders || 0) === 0}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear All Orders & Sales Data
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleClearCarts}
-              disabled={clearCartsMutation.isPending}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear All Shopping Carts
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statCards.map((stat) => {
           const Icon = stat.icon;
@@ -335,6 +302,39 @@ export default function AdminOverview() {
                 </LineChart>
               </ChartContainer>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data Management Card */}
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <CardTitle className="text-destructive">Data Management</CardTitle>
+          </div>
+          <CardDescription>
+            Permanently delete data from your database. These actions cannot be undone.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              variant="destructive"
+              onClick={handleClearOrders}
+              disabled={clearOrdersMutation.isPending || (stats?.totalOrders || 0) === 0}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear All Orders & Sales Data
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleClearCarts}
+              disabled={clearCartsMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear All Shopping Carts
+            </Button>
           </div>
         </CardContent>
       </Card>

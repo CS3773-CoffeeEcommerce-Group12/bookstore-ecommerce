@@ -919,7 +919,7 @@ export default function AdminBooks() {
             ) : (
               <div className="space-y-2 max-h-[600px] overflow-y-auto">
                 {filteredBooks.map((book) => (
-                  <Card key={book.id} className={selectedBooks.has(book.id) ? 'ring-2 ring-primary' : ''}>
+                  <Card key={book.id}>
                     <CardContent className="p-4">
                       <div className="flex gap-4 items-start">
                         <div className="flex items-start gap-3">

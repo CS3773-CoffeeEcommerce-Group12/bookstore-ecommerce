@@ -208,11 +208,15 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-background pt-16">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl font-bold mb-8 flex items-center gap-3">
-          <ShoppingBag className="h-10 w-10 text-foreground" />
-          <span className="text-primary">Checkout</span>
-        </h1>
-
+        <div className="flex items-center gap-3 mb-8">
+          <ShoppingBag className="h-8 w-8 text-accent" />
+          <div>
+            <h1 className="text-4xl font-bold text-foreground">
+              Checkout
+            </h1>
+            <p className="text-muted-foreground">Complete your purchase</p>
+          </div>
+        </div>
 
         {/* Order Summary */}
         <div className="bg-card rounded-xl p-6 border border-border shadow-medium mb-6">

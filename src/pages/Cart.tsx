@@ -122,13 +122,11 @@ const Cart = () => {
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-background p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="bg-gradient-warm p-3 rounded-xl">
-              <ShoppingBag className="h-8 w-8 text-accent-foreground" />
-            </div>
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center gap-3">
+            <ShoppingBag className="h-8 w-8 text-accent" />
             <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
+              <h1 className="text-4xl font-bold text-foreground">
                 Shopping Cart
               </h1>
               <p className="text-muted-foreground">Review your selected books</p>
@@ -164,13 +162,11 @@ const Cart = () => {
   // --- Main cart
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="bg-gradient-warm p-3 rounded-xl">
-            <ShoppingBag className="h-8 w-8 text-accent-foreground" />
-          </div>
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <ShoppingBag className="h-8 w-8 text-accent" />
           <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">
+            <h1 className="text-4xl font-bold text-foreground">
               Shopping Cart
             </h1>
             <p className="text-muted-foreground">Review your selected books</p>

@@ -54,6 +54,7 @@ const BookDetail = () => {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [justAddedToCart, setJustAddedToCart] = useState(false);
 
   const { data: book, isLoading } = useQuery({
     queryKey: ['item', bookId],
@@ -178,6 +179,7 @@ const BookDetail = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart-count'] });
       toast.success('Added to cart!');
+      setJustAddedToCart(true);
     },
     onError: (error: any) => {
       if (error?.message === 'User not signed in') {
@@ -571,9 +573,9 @@ const BookDetail = () => {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Tax (estimated)</span>
+                  <span className="text-sm text-muted-foreground">Shipping</span>
                   <span className="text-sm text-muted-foreground">
-                    ${(((book.price_cents * quantity) / 100) * 0.08).toFixed(2)}
+                    $0.00
                   </span>
                 </div>
               </div>
@@ -582,7 +584,7 @@ const BookDetail = () => {
               <div className="flex justify-between items-center pt-2">
                 <span className="text-lg font-bold text-foreground">Total</span>
                 <span className="text-2xl font-bold text-primary">
-                  ${(((book.price_cents * quantity) / 100) * 1.08).toFixed(2)}
+                  ${((book.price_cents * quantity) / 100).toFixed(2)}
                 </span>
               </div>
 
@@ -637,6 +639,18 @@ const BookDetail = () => {
                 <ShoppingCart className="mr-2 h-5 w-5" />
                 {book.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
               </Button>
+
+              {/* Proceed to Checkout Button - Shows after adding to cart */}
+              {justAddedToCart && (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full border-accent text-accent hover:bg-accent/10"
+                  onClick={() => navigate('/checkout')}
+                >
+                  Proceed to Checkout
+                </Button>
+              )}
             </div>
           </div>
         </div>
