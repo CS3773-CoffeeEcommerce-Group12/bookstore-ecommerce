@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,18 +17,22 @@ interface WishlistItem {
 
 const Wishlist = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("wishlist") || "[]");
+    if (!user) return;
+
+    const saved = JSON.parse(localStorage.getItem('wishlist') || "[]");
     setWishlistItems(saved);
-  }, []);
+
+
+  }, [user]);
+
 
   const removeFromWishlist = (bookId: number) => {
     const updated = wishlistItems.filter((item) => item.id !== bookId);
     setWishlistItems(updated);
-    localStorage.setItem("wishlist", JSON.stringify(updated));
+    localStorage.setItem('wishlist', JSON.stringify(updated));
     toast.success("Removed from wishlist");
   };
 
