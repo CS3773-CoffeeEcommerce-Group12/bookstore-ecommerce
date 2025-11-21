@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import { BookCard } from "@/components/BookCard";
@@ -15,19 +16,46 @@ interface WishlistItem {
 }
 
 const Wishlist = () => {
+  const { user } = useAuth();
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("wishlist") || "[]");
+    if (!user) return;
+
+    const saved = JSON.parse(localStorage.getItem('wishlist') || "[]");
     setWishlistItems(saved);
-  }, []);
+
+
+  }, [user]);
+
 
   const removeFromWishlist = (bookId: number) => {
     const updated = wishlistItems.filter((item) => item.id !== bookId);
     setWishlistItems(updated);
-    localStorage.setItem("wishlist", JSON.stringify(updated));
+    localStorage.setItem('wishlist', JSON.stringify(updated));
     toast.success("Removed from wishlist");
   };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <Card className="max-w-md text-center bg-card backdrop-blur-sm border-border p-8">
+          <Heart className="h-20 w-20 mx-auto mb-6 text-muted" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Sign in to view your wishlist
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            You need to be logged in to access your wishlist.
+          </p>
+          <Link to="/auth">
+            <Button size="lg" className="w-full rounded-lg">
+              Go to Login
+            </Button>
+          </Link>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background p-4 sm:p-6 lg:p-8 pt-20">
