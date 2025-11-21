@@ -231,6 +231,17 @@ const BookDetail = () => {
       setIsFavorited(true);
       toast.success('Added to wishlist!');
     }
+
+    if (!user)
+    {
+      const filtered = wishlist.filter((b: any) => b.id !== book.id);
+      localStorage.setItem('wishlist', JSON.stringify(filtered));
+      setIsFavorited(false);
+      navigate("/auth");
+      toast.success("Please log in to add to wishlist");
+      
+    }
+    
   };
 
   // Mock review data (you can replace with real data from database)
