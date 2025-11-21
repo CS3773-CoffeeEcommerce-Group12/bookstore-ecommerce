@@ -42,6 +42,17 @@ export const HeroCarousel = () => {
     api.on("select", () => setCurrent(api.selectedScrollSnap()));
   }, [api]);
 
+  useEffect(() => {
+  if (!api) return;
+
+  const interval = setInterval(() => {
+    api.scrollNext();
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [api]);
+
+
   if (!featuredBooks.length) return null;
 
   return (
