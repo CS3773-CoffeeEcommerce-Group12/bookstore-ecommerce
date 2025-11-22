@@ -128,6 +128,7 @@ export const HeroCarousel = () => {
                             font-bold mt-2 text-foreground
                             leading-snug
                             line-clamp-2
+                            pb-2
                           "
                         >
                           {book.name}
@@ -153,11 +154,29 @@ export const HeroCarousel = () => {
 
                       {/* Row 3: bottom — price + button */}
                       <div className="pt-1">
-                        <div className="flex items-center gap-3">
-                          <span className="text-3xl font-bold text-accent">
-                            ${(book.price_cents / 100).toFixed(2)}
-                          </span>
-                        </div>
+                        {(() => {
+                          const isOnSale = book.on_sale && book.sale_price_cents;
+                          const salePercent = book.sale_percentage || 0;
+                          const discountedPrice = isOnSale ? (book.sale_price_cents || book.price_cents) : book.price_cents;
+
+                          return (
+                            <div className="flex items-center gap-3">
+                              {isOnSale && (
+                                <span className="text-lg line-through text-muted-foreground">
+                                  ${(book.price_cents / 100).toFixed(2)}
+                                </span>
+                              )}
+                              <span className="text-3xl font-bold text-accent">
+                                ${(discountedPrice / 100).toFixed(2)}
+                              </span>
+                              {isOnSale && (
+                                <span className="text-sm bg-accent/20 text-accent px-2 py-1 rounded-full font-semibold">
+                                  {salePercent}% OFF
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
 
                         <Link to={`/book/${book.id}`}>
                           <Button className="mt-4 w-full bg-accent text-accent-foreground rounded-lg hover:opacity-90">

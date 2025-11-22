@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/co
 export const Navbar = () => {
   const { user, isAdmin } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
 
   const { data: cartCount = 0 } = useQuery({
     queryKey: ['cart-count', user?.id],
@@ -42,39 +43,51 @@ export const Navbar = () => {
     { to: '/orders', label: 'Orders', icon: Package },
   ];
 
-  const NavLink = ({ to, label, icon: Icon, badge, mobile = false }: { to: string; label: string; icon?: any; badge?: number; mobile?: boolean }) => (
-    <Link
-      to={to}
-      onClick={() => setIsOpen(false)}
-      className={mobile
-        ? "flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent/10 transition-colors text-foreground"
-        : "text-foreground hover:text-primary transition-colors font-medium"
-      }
-    >
-      {Icon && mobile && <Icon className="h-5 w-5" />}
-      <span>{label}</span>
-      {badge !== undefined && badge > 0 && (
-        <span className={mobile
-          ? "ml-auto bg-accent text-accent-foreground rounded-full px-2 py-0.5 text-xs font-bold"
-          : "ml-1 text-accent font-bold"
-        }>
-          {mobile ? badge : `(${badge})`}
-        </span>
-      )}
-    </Link>
-  );
+  const NavLink = ({ to, label, icon: Icon, badge, mobile = false }: { to: string; label: string; icon?: any; badge?: number; mobile?: boolean }) => {
+    const isActive = location.pathname === to;
+
+    return (
+      <Link
+        to={to}
+        onClick={() => setIsOpen(false)}
+        className={mobile
+          ? `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              isActive
+                ? "bg-accent/20 text-primary font-semibold"
+                : "text-foreground hover:bg-accent/10"
+            }`
+          : `text-foreground hover:text-primary transition-colors font-medium relative ${
+              isActive ? "text-primary font-semibold" : ""
+            }`
+        }
+      >
+        {Icon && mobile && <Icon className="h-5 w-5" />}
+        <span>{label}</span>
+        {badge !== undefined && badge > 0 && (
+          <span className={mobile
+            ? "ml-auto bg-accent text-accent-foreground rounded-full px-2 py-0.5 text-xs font-bold"
+            : "ml-1 text-accent font-bold"
+          }>
+            {mobile ? badge : `(${badge})`}
+          </span>
+        )}
+        {!mobile && isActive && (
+          <span className="absolute -bottom-[17px] left-0 right-0 h-0.5 bg-primary" />
+        )}
+      </Link>
+    );
+  };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
 
           {/* Logo - Left */}
           <Link
             to="/"
-            className="font-bold text-xl text-primary hover:text-primary/80 transition-colors flex-shrink-0 flex items-center gap-2"
+            className="font-bold text-2xl text-primary hover:text-primary/80 transition-colors flex-shrink-0 flex items-center gap-2"
           >
-            <BookHeart className="h-6 w-6 text-accent" />
+            <BookHeart className="h-7 w-7 text-accent" />
             <span className="hidden sm:inline">Hearts & Pages</span>
             <span className="sm:hidden">H&P</span>
           </Link>
@@ -134,7 +147,6 @@ export const Navbar = () => {
             </Sheet>
           </div>
         </div>
-      </div>
     </nav>
   );
 };

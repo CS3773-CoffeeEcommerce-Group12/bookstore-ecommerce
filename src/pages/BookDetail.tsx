@@ -48,6 +48,11 @@ const BookDetail = () => {
   const bookId = id ?? '';
 
   const navigate = useNavigate();
+
+  // Scroll to top when book ID changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [bookId]);
   const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [quantity, setQuantity] = useState(1);
@@ -516,29 +521,23 @@ const BookDetail = () => {
           {/* Column 3: Price, Quantity, and Add to Cart */}
           <div className="lg:col-span-3 order-2 lg:order-last">
             <div className="p-4 sm:p-6 bg-card/50 rounded-xl space-y-4 sm:space-y-6 lg:sticky lg:top-24 relative">
-              {/* Demo sale badge */}
-              {(() => {
-                const lastDigit = book.price_cents % 10;
-                const isOnSale = lastDigit === 0 || lastDigit === 5;
-                const salePercent = lastDigit === 0 ? 15 : lastDigit === 5 ? 20 : 0;
-
-                return isOnSale ? (
-                  <div className="absolute -top-3 -right-3 bg-gradient-warm text-accent-foreground px-4 py-2 rounded-full text-sm font-bold shadow-lg z-10 flex items-center gap-1">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-                      <line x1="7" y1="7" x2="7.01" y2="7"></line>
-                    </svg>
-                    {salePercent}% OFF SALE!
-                  </div>
-                ) : null;
-              })()}
+              {/* Sale badge */}
+              {book.on_sale && book.sale_percentage && (
+                <div className="absolute -top-3 -right-3 bg-gradient-warm text-accent-foreground px-4 py-2 rounded-full text-sm font-bold shadow-lg z-10 flex items-center gap-1">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                  </svg>
+                  {book.sale_percentage}% OFF SALE!
+                </div>
+              )}
 
               {/* Stock Status */}
               <div className="text-center">
@@ -555,38 +554,70 @@ const BookDetail = () => {
               </div>
 
               {/* Price Breakdown */}
-              <div className="space-y-3 border-b border-border pb-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Price</span>
-                  <span className="text-lg font-semibold text-foreground">
-                    ${(book.price_cents / 100).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Quantity</span>
-                  <span className="text-sm font-medium text-foreground">{quantity}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Subtotal</span>
-                  <span className="text-base font-semibold text-foreground">
-                    ${((book.price_cents * quantity) / 100).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Shipping</span>
-                  <span className="text-sm text-muted-foreground">
-                    $0.00
-                  </span>
-                </div>
-              </div>
+              {(() => {
+                const isOnSale = book.on_sale && book.sale_price_cents;
+                const salePercent = book.sale_percentage || 0;
+                const discountedPrice = isOnSale ? (book.sale_price_cents || book.price_cents) : book.price_cents;
+                const originalSubtotal = book.price_cents * quantity;
+                const discountAmount = originalSubtotal - (discountedPrice * quantity);
+
+                return (
+                  <div className="space-y-3 border-b border-border pb-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Price</span>
+                      <div className="flex items-center gap-2">
+                        {isOnSale && (
+                          <span className="text-sm line-through text-muted-foreground">
+                            ${(book.price_cents / 100).toFixed(2)}
+                          </span>
+                        )}
+                        <span className={`text-lg font-semibold ${isOnSale ? 'text-accent' : 'text-foreground'}`}>
+                          ${(discountedPrice / 100).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Quantity</span>
+                      <span className="text-sm font-medium text-foreground">{quantity}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Subtotal</span>
+                      <span className="text-base font-semibold text-foreground">
+                        ${(originalSubtotal / 100).toFixed(2)}
+                      </span>
+                    </div>
+                    {isOnSale && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-accent">Sale Discount ({salePercent}%)</span>
+                        <span className="text-base font-semibold text-accent">
+                          -${(discountAmount / 100).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Shipping</span>
+                      <span className="text-sm text-muted-foreground">
+                        $0.00
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Total */}
-              <div className="flex justify-between items-center pt-2">
-                <span className="text-lg font-bold text-foreground">Total</span>
-                <span className="text-2xl font-bold text-primary">
-                  ${((book.price_cents * quantity) / 100).toFixed(2)}
-                </span>
-              </div>
+              {(() => {
+                const isOnSale = book.on_sale && book.sale_price_cents;
+                const discountedPrice = isOnSale ? (book.sale_price_cents || book.price_cents) : book.price_cents;
+
+                return (
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-lg font-bold text-foreground">Total</span>
+                    <span className="text-2xl font-bold text-primary">
+                      ${((discountedPrice * quantity) / 100).toFixed(2)}
+                    </span>
+                  </div>
+                );
+              })()}
 
               {/* Quantity Selector */}
               {book.stock > 0 && (

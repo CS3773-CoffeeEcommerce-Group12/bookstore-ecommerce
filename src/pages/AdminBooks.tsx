@@ -271,6 +271,8 @@ export default function AdminBooks() {
       sale_percentage: book.sale_percentage ? book.sale_percentage.toString() : '',
       sale_ends_at: book.sale_ends_at ? new Date(book.sale_ends_at).toISOString().slice(0, 16) : '',
     });
+    // Scroll to top to show the edit form
+    window.scrollTo(0, 0);
   };
 
   const filteredBooks = existingBooks?.filter(book => {
@@ -519,7 +521,7 @@ export default function AdminBooks() {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="featured">Add to Hero Banner</Label>
+                      <Label htmlFor="featured">Add to Featured Banner</Label>
                       <Switch
                         id="featured"
                         checked={formData.featured}
@@ -774,7 +776,7 @@ export default function AdminBooks() {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="featured">Add to Hero Banner</Label>
+                      <Label htmlFor="featured">Add to Featured Banner</Label>
                       <Switch
                         id="featured"
                         checked={formData.featured}

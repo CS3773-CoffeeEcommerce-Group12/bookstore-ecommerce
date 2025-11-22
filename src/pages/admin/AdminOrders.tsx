@@ -273,7 +273,7 @@ export default function AdminOrders() {
                       <div>
                         <CardTitle className="text-lg flex items-center gap-2">
                           Order #{order.id.slice(0, 8)}
-                          <Badge variant="outline" className="status-info">
+                          <Badge variant="outline" className="status-info hidden sm:inline-flex">
                             <ShoppingCart className="h-3 w-3 mr-1" />
                             {order.order_items.reduce((sum, item) => sum + item.qty, 0)} items
                           </Badge>
@@ -410,7 +410,7 @@ export default function AdminOrders() {
                       <div>
                         <CardTitle className="text-lg flex items-center gap-2">
                           Order #{order.id.slice(0, 8)}
-                          <Badge variant="outline" className="status-info">
+                          <Badge variant="outline" className="status-info hidden sm:inline-flex">
                             <ShoppingCart className="h-3 w-3 mr-1" />
                             {order.order_items.reduce((sum, item) => sum + item.qty, 0)} items
                           </Badge>
@@ -499,7 +499,7 @@ export default function AdminOrders() {
                       <div>
                         <CardTitle className="text-lg flex items-center gap-2">
                           Order #{order.id.slice(0, 8)}
-                          <Badge variant="outline" className="status-info">
+                          <Badge variant="outline" className="status-info hidden sm:inline-flex">
                             <ShoppingCart className="h-3 w-3 mr-1" />
                             {order.order_items.reduce((sum, item) => sum + item.qty, 0)} items
                           </Badge>

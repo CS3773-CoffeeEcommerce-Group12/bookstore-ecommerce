@@ -144,118 +144,167 @@ const Discounts = () => {
               <p>No discounted books available right now.</p>
             ) : (
               <p>
+                Showing{" "}
                 <span className="font-semibold text-foreground">{items.length}</span>{" "}
-                {items.length === 1 ? "book" : "books"} on sale
+                {items.length === 1 ? "book" : "books"}
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex border border-border rounded-lg">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className={viewMode === 'grid' ? 'bg-accent text-accent-foreground' : ''}
-              >
-                <Grid3x3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className={viewMode === 'list' ? 'bg-accent text-accent-foreground' : ''}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-            <Link to="/catalog">
-              <Button variant="outline" size="sm">View All Books</Button>
-            </Link>
+
+          {/* View Mode Toggle */}
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className={viewMode === 'grid' ? 'btn-primary' : ''}
+            >
+              <Grid3x3 className="h-4 w-4 mr-2" />
+              Grid
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className={viewMode === 'list' ? 'btn-primary' : ''}
+            >
+              <List className="h-4 w-4 mr-2" />
+              List
+            </Button>
           </div>
         </div>
 
-        {/* Items grid or list */}
-        <section className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6' : 'flex flex-col gap-4'}>
-          {isLoading
-            ? Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-96 bg-muted animate-pulse rounded-lg"
-                />
-              ))
-            : items.map((item) => {
-                const displayPrice = item.sale_price_cents
-                  ? `$${(item.sale_price_cents / 100).toFixed(2)}`
-                  : `$${(item.price_cents / 100).toFixed(2)}`;
-                const originalPrice = item.sale_price_cents
-                  ? `$${(item.price_cents / 100).toFixed(2)}`
-                  : undefined;
+        {/* Items display - Grid or List */}
+        {viewMode === 'grid' ? (
+          <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {isLoading
+              ? Array.from({ length: 8 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-96 bg-muted animate-pulse rounded-lg"
+                  />
+                ))
+              : items.map((item) => {
+                  const displayPrice = item.sale_price_cents
+                    ? `$${(item.sale_price_cents / 100).toFixed(2)}`
+                    : `$${(item.price_cents / 100).toFixed(2)}`;
 
-                if (viewMode === 'list') {
+                  const originalPrice = item.sale_price_cents
+                    ? `$${(item.price_cents / 100).toFixed(2)}`
+                    : undefined;
+
+                  return (
+                    <Link key={item.id} to={`/book/${item.id}`}>
+                      <div className="relative">
+                        {item.on_sale && item.sale_percentage && (
+                          <div className="absolute top-2 left-2 z-10 bg-accent text-accent-foreground px-2 py-1 rounded-md text-xs font-bold shadow-lg">
+                            {Math.round(item.sale_percentage)}% OFF
+                          </div>
+                        )}
+                        <BookCard
+                          title={item.name}
+                          author={item.author || 'Unknown Author'}
+                          price={displayPrice}
+                          originalPrice={originalPrice}
+                          image={item.img_url || '/placeholder.svg'}
+                          stock={item.stock}
+                          onSale={item.on_sale || false}
+                          compact={true}
+                        />
+                      </div>
+                    </Link>
+                  );
+                })}
+          </section>
+        ) : (
+          <section className="space-y-4">
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-32 bg-muted animate-pulse rounded-lg"
+                  />
+                ))
+              : items.map((item) => {
+                  const displayPrice = item.sale_price_cents
+                    ? `$${(item.sale_price_cents / 100).toFixed(2)}`
+                    : `$${(item.price_cents / 100).toFixed(2)}`;
+
+                  const originalPrice = item.sale_price_cents
+                    ? `$${(item.price_cents / 100).toFixed(2)}`
+                    : undefined;
+
                   return (
                     <Link key={item.id} to={`/book/${item.id}`}>
                       <Card className="hover:shadow-lg transition-shadow">
                         <div className="flex gap-4 p-4">
-                          <div className="relative flex-shrink-0">
-                            {item.on_sale && item.sale_percentage && (
-                              <div className="absolute top-0 left-0 z-10 bg-accent text-accent-foreground px-2 py-1 rounded-md text-xs font-bold shadow-lg flex items-center gap-1">
-                                <TrendingDown size={12} />
-                                {Math.round(item.sale_percentage)}% OFF
-                              </div>
-                            )}
+                          {/* Book Image */}
+                          <div className="relative w-24 h-32 flex-shrink-0">
                             <img
                               src={item.img_url || '/placeholder.svg'}
                               alt={item.name}
-                              className="w-24 h-32 object-cover rounded"
+                              className="w-full h-full object-cover rounded-md"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder.svg';
+                              }}
                             />
+                            {item.stock === 0 && (
+                              <div className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-xs px-1 py-0.5 rounded">
+                                Out
+                              </div>
+                            )}
                           </div>
+
+                          {/* Book Info */}
                           <div className="flex-1 flex flex-col justify-between">
                             <div>
-                              <h3 className="font-semibold text-lg text-foreground">{item.name}</h3>
-                              <p className="text-sm text-muted-foreground">{item.author || 'Unknown Author'}</p>
-                            </div>
-                            <div className="flex items-center justify-between mt-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xl font-bold text-accent">{displayPrice}</span>
-                                {originalPrice && (
-                                  <span className="text-sm text-muted-foreground line-through">{originalPrice}</span>
+                              <div className="flex items-start justify-between gap-2">
+                                <h3 className="font-bold text-foreground text-lg line-clamp-2 hover:text-accent transition-colors">
+                                  {item.name}
+                                </h3>
+                                {item.on_sale && item.sale_percentage && (
+                                  <span className="bg-accent text-accent-foreground px-2 py-1 rounded-md text-xs font-bold whitespace-nowrap">
+                                    {Math.round(item.sale_percentage)}% OFF
+                                  </span>
                                 )}
                               </div>
-                              <span className={`text-sm ${item.stock > 0 ? 'text-success' : 'text-muted-foreground'}`}>
-                                {item.stock > 0 ? `${item.stock} in stock` : 'Out of stock'}
-                              </span>
+                              <p className="text-muted-foreground text-sm mt-1">
+                                {item.author || 'Unknown Author'}
+                              </p>
+                              {item.description && (
+                                <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                                  {item.description}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl font-bold text-foreground">
+                                  {displayPrice}
+                                </span>
+                                {originalPrice && item.on_sale && (
+                                  <span className="text-sm line-through text-muted-foreground">
+                                    {originalPrice}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {item.stock > 0 ? (
+                                  <span className="text-success">In Stock: {item.stock}</span>
+                                ) : (
+                                  <span className="text-destructive">Out of Stock</span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </Card>
                     </Link>
                   );
-                }
-
-                return (
-                  <Link key={item.id} to={`/book/${item.id}`}>
-                    <div className="relative">
-                      {item.on_sale && item.sale_percentage && (
-                        <div className="absolute top-2 left-2 z-10 bg-accent text-accent-foreground px-2 py-1 rounded-md text-xs font-bold shadow-lg flex items-center gap-1">
-                          <TrendingDown size={14} />
-                          {Math.round(item.sale_percentage)}% OFF
-                        </div>
-                      )}
-                      <BookCard
-                        title={item.name}
-                        author={item.author || 'Unknown Author'}
-                        price={displayPrice}
-                        originalPrice={originalPrice}
-                        image={item.img_url || '/placeholder.svg'}
-                        stock={item.stock}
-                        onSale={item.on_sale || false}
-                        compact={true}
-                      />
-                    </div>
-                  </Link>
-                );
-              })}
-        </section>
+                })}
+          </section>
+        )}
 
         {/* Empty State */}
         {items.length === 0 && !isLoading && (

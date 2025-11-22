@@ -16,7 +16,7 @@ const Catalog = () => {
   const [filters, setFilters] = useState({
     q: "",
     sort: "created_at",
-    available: "0",
+    available: "1", // Default to "In Stock Only"
   });
 
   const { data: items = [], isLoading, error } = useQuery({
@@ -194,7 +194,7 @@ const Catalog = () => {
 
         {/* Items display - Grid or List */}
         {viewMode === 'grid' ? (
-          <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {isLoading
               ? Array.from({ length: 8 }).map((_, i) => (
                   <div
@@ -348,7 +348,7 @@ const Catalog = () => {
             </p>
             <Button
               onClick={() =>
-                setFilters({ q: "", sort: "created_at", available: "0" })
+                setFilters({ q: "", sort: "created_at", available: "1" })
               }
               className="btn-primary"
             >

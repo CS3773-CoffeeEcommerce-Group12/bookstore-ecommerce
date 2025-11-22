@@ -10,7 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Package, Truck, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Package, Truck, CheckCircle, XCircle, Clock, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FulfillmentWithDetails {
@@ -41,6 +43,54 @@ export default function AdminFulfillments() {
   const queryClient = useQueryClient();
   const [trackingNumber, setTrackingNumber] = useState<{ [key: string]: string }>({});
   const [shippedQty, setShippedQty] = useState<{ [key: string]: number }>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFulfillments, setSelectedFulfillments] = useState<Set<string>>(new Set());
+
+  // Selection helpers
+  const toggleSelection = (id: string) => {
+    setSelectedFulfillments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAll = (fulfillments: FulfillmentWithDetails[]) => {
+    setSelectedFulfillments(new Set(fulfillments.map(f => f.id)));
+  };
+
+  const deselectAll = () => {
+    setSelectedFulfillments(new Set());
+  };
+
+  const bulkUpdateStatus = async (newStatus: string) => {
+    const ids = Array.from(selectedFulfillments);
+    if (ids.length === 0) {
+      toast.error('No items selected');
+      return;
+    }
+
+    try {
+      await Promise.all(
+        ids.map(id =>
+          fulfillmentService.updateFulfillment(id, {
+            status: newStatus,
+            fulfilled_by: user?.id
+          })
+        )
+      );
+      queryClient.invalidateQueries({ queryKey: ['fulfillments'] });
+      toast.success(`Updated ${ids.length} fulfillment(s) to ${newStatus}`);
+      deselectAll();
+    } catch (error) {
+      console.error('Error bulk updating:', error);
+      toast.error('Failed to bulk update');
+    }
+  };
 
   // Helper function to format dates safely
   const formatDate = (dateString: string) => {
@@ -225,6 +275,19 @@ export default function AdminFulfillments() {
     }
   };
 
+  // Filter fulfillments based on search query
+  const filterFulfillments = (fulfillments: FulfillmentWithDetails[]) => {
+    if (!searchQuery.trim()) return fulfillments;
+
+    const query = searchQuery.toLowerCase();
+    return fulfillments.filter(f =>
+      f.items?.name?.toLowerCase().includes(query) ||
+      f.orders?.customer_email?.toLowerCase().includes(query) ||
+      f.order_id.toLowerCase().includes(query) ||
+      f.tracking_number?.toLowerCase().includes(query)
+    );
+  };
+
   // Show error state
   if (pendingError) {
     return (
@@ -253,29 +316,36 @@ export default function AdminFulfillments() {
   const renderFulfillmentCard = (fulfillment: FulfillmentWithDetails) => (
     <Card key={fulfillment.id} className="mb-4">
       <CardHeader>
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              {fulfillment.items?.name || 'Unknown Item'}
-              <Badge className={getStatusColor(fulfillment.status)}>
-                {getStatusIcon(fulfillment.status)}
-                {fulfillment.status}
-              </Badge>
-            </CardTitle>
+        <div className="flex items-start gap-3">
+          <Checkbox
+            checked={selectedFulfillments.has(fulfillment.id)}
+            onCheckedChange={() => toggleSelection(fulfillment.id)}
+            className="mt-1"
+          />
+          <div className="flex-1 flex items-start justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                {fulfillment.items?.name || 'Unknown Item'}
+                <Badge className={getStatusColor(fulfillment.status)}>
+                  {getStatusIcon(fulfillment.status)}
+                  {fulfillment.status}
+                </Badge>
+              </CardTitle>
             <CardDescription className="space-y-1 mt-2">
               <span className="block">Order ID: {fulfillment.order_id.slice(0, 8)}...</span>
               <span className="block">Customer: {fulfillment.orders?.customer_email || 'Unknown'}</span>
               <span className="block">Order Date: {formatDate(fulfillment.orders?.created_at || fulfillment.created_at)}</span>
               {fulfillment.items?.author && <span className="block">Author: {fulfillment.items.author}</span>}
             </CardDescription>
+            </div>
+            {fulfillment.items?.img_url && (
+              <img
+                src={fulfillment.items.img_url}
+                alt={fulfillment.items.name}
+                className="w-16 h-20 object-cover rounded"
+              />
+            )}
           </div>
-          {fulfillment.items?.img_url && (
-            <img
-              src={fulfillment.items.img_url}
-              alt={fulfillment.items.name}
-              className="w-16 h-20 object-cover rounded"
-            />
-          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -362,9 +432,13 @@ export default function AdminFulfillments() {
     </Card>
   );
 
+  const filteredPending = filterFulfillments(pendingFulfillments);
+  const filteredProcessing = filterFulfillments(processingFulfillments as FulfillmentWithDetails[]);
+  const filteredShipped = filterFulfillments(shippedFulfillments as FulfillmentWithDetails[]);
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Package className="h-8 w-8 text-primary" />
           <div>
@@ -372,85 +446,218 @@ export default function AdminFulfillments() {
             <p className="text-muted-foreground">Manage order processing and shipping</p>
           </div>
         </div>
+
+        {/* Search Bar */}
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search orders..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
       </div>
 
-      {/* Pending Orders Section */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 border-b pb-2">
-          <Clock className="h-5 w-5 text-orange-500" />
-          <h3 className="text-lg font-semibold">Pending Orders ({pendingFulfillments.length})</h3>
-        </div>
-        {loadingPending ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
-          </div>
-        ) : pendingFulfillments.length > 0 ? (
-          <div className="space-y-4">
-            {pendingFulfillments.map(renderFulfillmentCard)}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="py-8">
-              <div className="text-center text-muted-foreground">
-                <Clock className="h-12 w-12 mx-auto mb-4 text-orange-300" />
-                <p>No pending orders</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {/* Tabbed Navigation */}
+      <Tabs defaultValue="pending" className="space-y-6">
+        <TabsList className="bg-card border border-border p-1 grid grid-cols-3 w-full">
+          <TabsTrigger
+            value="pending"
+            className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground flex items-center justify-center gap-2"
+          >
+            <Clock className="h-5 w-5 md:h-4 md:w-4" />
+            <span className="hidden md:inline">Pending</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="processing"
+            className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground flex items-center justify-center gap-2"
+          >
+            <Package className="h-5 w-5 md:h-4 md:w-4" />
+            <span className="hidden md:inline">Processing</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="shipped"
+            className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground flex items-center justify-center gap-2"
+          >
+            <Truck className="h-5 w-5 md:h-4 md:w-4" />
+            <span className="hidden md:inline">Shipped</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Processing Orders Section */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 border-b pb-2">
-          <Package className="h-5 w-5 text-info" />
-          <h3 className="text-lg font-semibold">Processing Orders ({processingFulfillments.length})</h3>
-        </div>
-        {loadingProcessing ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
-          </div>
-        ) : processingFulfillments.length > 0 ? (
-          <div className="space-y-4">
-            {processingFulfillments.map((fulfillment) => renderFulfillmentCard(fulfillment as FulfillmentWithDetails))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="py-8">
-              <div className="text-center text-muted-foreground">
-                <Package className="h-12 w-12 mx-auto mb-4 text-info/50" />
-                <p>No orders being processed</p>
+        {/* Pending Tab */}
+        <TabsContent value="pending" className="space-y-4">
+          {loadingPending ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
+            </div>
+          ) : filteredPending.length > 0 ? (
+            <>
+              <Card className="bg-muted/30">
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={filteredPending.every(f => selectedFulfillments.has(f.id)) && filteredPending.length > 0}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            selectAll(filteredPending);
+                          } else {
+                            deselectAll();
+                          }
+                        }}
+                      />
+                      <span className="text-sm font-medium">
+                        {selectedFulfillments.size > 0
+                          ? `${selectedFulfillments.size} selected`
+                          : 'Select all'}
+                      </span>
+                    </div>
+                    {selectedFulfillments.size > 0 && (
+                      <div className="flex gap-2 flex-wrap">
+                        <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus('processing')}>
+                          <Package className="h-4 w-4 mr-1" />
+                          Mark as Processing
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus('cancelled')}>
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Cancel Selected
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              <div className="space-y-4">
+                {filteredPending.map(renderFulfillmentCard)}
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 text-orange-300" />
+                  <p>{searchQuery ? 'No matching pending orders' : 'No pending orders'}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
-      {/* Shipped Orders Section */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 border-b pb-2">
-          <Truck className="h-5 w-5 text-purple-500" />
-          <h3 className="text-lg font-semibold">Shipped Orders ({shippedFulfillments.length})</h3>
-        </div>
-        {loadingShipped ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
-          </div>
-        ) : shippedFulfillments.length > 0 ? (
-          <div className="space-y-4">
-            {shippedFulfillments.map((fulfillment) => renderFulfillmentCard(fulfillment as FulfillmentWithDetails))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="py-8">
-              <div className="text-center text-muted-foreground">
-                <Truck className="h-12 w-12 mx-auto mb-4 text-purple-300" />
-                <p>No shipped orders</p>
+        {/* Processing Tab */}
+        <TabsContent value="processing" className="space-y-4">
+          {loadingProcessing ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
+            </div>
+          ) : filteredProcessing.length > 0 ? (
+            <>
+              <Card className="bg-muted/30">
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={filteredProcessing.every(f => selectedFulfillments.has(f.id)) && filteredProcessing.length > 0}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            selectAll(filteredProcessing);
+                          } else {
+                            deselectAll();
+                          }
+                        }}
+                      />
+                      <span className="text-sm font-medium">
+                        {selectedFulfillments.size > 0
+                          ? `${selectedFulfillments.size} selected`
+                          : 'Select all'}
+                      </span>
+                    </div>
+                    {selectedFulfillments.size > 0 && (
+                      <div className="flex gap-2 flex-wrap">
+                        <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus('shipped')}>
+                          <Truck className="h-4 w-4 mr-1" />
+                          Mark as Shipped
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus('cancelled')}>
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Cancel Selected
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              <div className="space-y-4">
+                {filteredProcessing.map(renderFulfillmentCard)}
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-4 text-info/50" />
+                  <p>{searchQuery ? 'No matching processing orders' : 'No orders being processed'}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Shipped Tab */}
+        <TabsContent value="shipped" className="space-y-4">
+          {loadingShipped ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
+            </div>
+          ) : filteredShipped.length > 0 ? (
+            <>
+              <Card className="bg-muted/30">
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={filteredShipped.every(f => selectedFulfillments.has(f.id)) && filteredShipped.length > 0}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            selectAll(filteredShipped);
+                          } else {
+                            deselectAll();
+                          }
+                        }}
+                      />
+                      <span className="text-sm font-medium">
+                        {selectedFulfillments.size > 0
+                          ? `${selectedFulfillments.size} selected`
+                          : 'Select all'}
+                      </span>
+                    </div>
+                    {selectedFulfillments.size > 0 && (
+                      <div className="flex gap-2 flex-wrap">
+                        <Button size="sm" variant="outline" onClick={() => bulkUpdateStatus('delivered')}>
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Mark as Delivered
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              <div className="space-y-4">
+                {filteredShipped.map(renderFulfillmentCard)}
+              </div>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center text-muted-foreground">
+                  <Truck className="h-12 w-12 mx-auto mb-4 text-purple-300" />
+                  <p>{searchQuery ? 'No matching shipped orders' : 'No shipped orders'}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

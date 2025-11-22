@@ -334,8 +334,8 @@ const Orders = () => {
     return (
       <Card key={order.id} className="overflow-hidden">
         <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+            <div className="space-y-1 flex-1">
               <p className="text-sm text-muted-foreground flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 {format(new Date(order.created_at), 'PPP')}
@@ -343,7 +343,7 @@ const Orders = () => {
               <p className="text-sm text-muted-foreground">
                 Order #{order.id.slice(0, 8).toUpperCase()}
               </p>
-              
+
               {/* Item Names and Quantities */}
               <div className="space-y-1 mt-2">
                 {order.order_items.map((item, idx) => (
@@ -352,23 +352,20 @@ const Orders = () => {
                   </p>
                 ))}
               </div>
-              
+
               {isAdmin && order.customer_email && (
                 <p className="text-sm text-muted-foreground">
                   Customer: {order.customer_email}
                 </p>
               )}
             </div>
-            <div className="text-right">
+            <div className="flex flex-col items-end gap-2">
               <p className="text-2xl font-bold text-accent">
                 ${(order.total_cents / 100).toFixed(2)}
               </p>
-              <p className="text-sm text-muted-foreground">
-                {itemCount} {itemCount === 1 ? 'item' : 'items'}
-              </p>
-              <Badge 
-                variant="secondary" 
-                className={`mt-2 ${
+              <Badge
+                variant="secondary"
+                className={`${
                   status === 'delivered'
                     ? 'status-success'
                     : status === 'shipped'
@@ -378,6 +375,9 @@ const Orders = () => {
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </Badge>
+              <p className="text-sm text-muted-foreground hidden sm:block">
+                {itemCount} {itemCount === 1 ? 'item' : 'items'}
+              </p>
             </div>
           </div>
         </CardHeader>
@@ -471,6 +471,43 @@ const Orders = () => {
 
               <Separator />
 
+              {/* Order Summary */}
+              <div>
+                <h4 className="font-semibold text-foreground mb-3">Order Summary</h4>
+                <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                  {(() => {
+                    // Calculate item subtotal from order items (prices at time of purchase)
+                    const itemSubtotal = order.order_items.reduce((sum, item) => sum + (item.price_cents * item.qty), 0);
+                    // Tax is 8.25% of subtotal
+                    const calculatedTax = Math.round(itemSubtotal * 0.0825);
+                    // Total should match order.total_cents
+
+                    return (
+                      <>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Subtotal</span>
+                          <span className="text-foreground">${(itemSubtotal / 100).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Shipping</span>
+                          <span className="text-foreground">$0.00</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Tax (8.25%)</span>
+                          <span className="text-foreground">${(calculatedTax / 100).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-base font-bold pt-2 border-t border-border">
+                          <span className="text-foreground">Total</span>
+                          <span className="text-accent">${(order.total_cents / 100).toFixed(2)}</span>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              <Separator />
+
               {/* Shipping Information */}
               <div>
                 <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -546,8 +583,8 @@ const Orders = () => {
 
   if (loadingMyOrders) {
     return (
-      <div className="min-h-screen bg-background pt-16">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
               <Skeleton key={i} className="h-64 w-full" />
@@ -559,9 +596,9 @@ const Orders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center gap-3 mb-8">
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
           <CalendarDays className="h-8 w-8 text-accent" />
           <div>
             <h1 className="text-4xl font-bold text-foreground">
@@ -599,21 +636,21 @@ const Orders = () => {
                     className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center justify-center gap-2"
                   >
                     <Truck className="h-5 w-5 md:h-4 md:w-4" />
-                    <span className="hidden lg:inline">Upcoming ({upcomingOrders.length})</span>
+                    <span className="hidden">Upcoming ({upcomingOrders.length})</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="history"
                     className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center justify-center gap-2"
                   >
                     <CheckCircle className="h-5 w-5 md:h-4 md:w-4" />
-                    <span className="hidden lg:inline">History ({completedOrders.length})</span>
+                    <span className="hidden">History ({completedOrders.length})</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="cancelled"
                     className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center justify-center gap-2"
                   >
                     <XCircle className="h-5 w-5 md:h-4 md:w-4" />
-                    <span className="hidden lg:inline">Cancelled ({cancelledOrders.length})</span>
+                    <span className="hidden">Cancelled ({cancelledOrders.length})</span>
                   </TabsTrigger>
                 </TabsList>
 

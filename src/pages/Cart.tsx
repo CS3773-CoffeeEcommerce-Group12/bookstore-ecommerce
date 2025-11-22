@@ -77,10 +77,18 @@ const Cart = () => {
     onError: () => toast.error("Failed to update cart"),
   });
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.items.price_cents * item.qty,
-    0
-  );
+  const originalSubtotal = cartItems.reduce((sum, item) => sum + item.items.price_cents * item.qty, 0);
+
+  const subtotal = cartItems.reduce((sum, item) => {
+    const isOnSale = item.items.on_sale && item.items.sale_price_cents;
+    const discountedPrice = isOnSale ? (item.items.sale_price_cents || item.items.price_cents) : item.items.price_cents;
+    return sum + discountedPrice * item.qty;
+  }, 0);
+
+  const totalSavings = originalSubtotal - subtotal;
+  const tax = Math.round(subtotal * 0.0825); // 8.25% tax
+  const shipping = 0; // Free shipping
+  const total = subtotal + tax + shipping;
 
   // --- Unauthenticated view
   if (!user) {
@@ -195,9 +203,29 @@ const Cart = () => {
                       </h3>
                     </Link>
                     <p className="text-sm text-muted-foreground mt-1">Various Authors</p>
-                    <p className="text-lg font-bold text-primary mt-2">
-                      ${(item.items.price_cents / 100).toFixed(2)}
-                    </p>
+                    {(() => {
+                      const isOnSale = item.items.on_sale && item.items.sale_price_cents;
+                      const salePercent = item.items.sale_percentage || 0;
+                      const discountedPrice = isOnSale ? (item.items.sale_price_cents || item.items.price_cents) : item.items.price_cents;
+
+                      return (
+                        <div className="flex items-center gap-2 mt-2">
+                          {isOnSale && (
+                            <span className="text-sm line-through text-muted-foreground">
+                              ${(item.items.price_cents / 100).toFixed(2)}
+                            </span>
+                          )}
+                          <p className={`text-lg font-bold ${isOnSale ? 'text-accent' : 'text-primary'}`}>
+                            ${(discountedPrice / 100).toFixed(2)}
+                          </p>
+                          {isOnSale && (
+                            <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full font-semibold">
+                              {salePercent}% OFF
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mt-4">
                       <div className="flex items-center gap-2">
@@ -251,9 +279,16 @@ const Cart = () => {
                   </div>
 
                   <div className="text-center sm:text-right mt-4 sm:mt-0">
-                    <p className="text-xl font-bold text-foreground">
-                      ${((item.items.price_cents * item.qty) / 100).toFixed(2)}
-                    </p>
+                    {(() => {
+                      const isOnSale = item.items.on_sale && item.items.sale_price_cents;
+                      const discountedPrice = isOnSale ? (item.items.sale_price_cents || item.items.price_cents) : item.items.price_cents;
+
+                      return (
+                        <p className="text-xl font-bold text-foreground">
+                          ${((discountedPrice * item.qty) / 100).toFixed(2)}
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -271,7 +306,25 @@ const Cart = () => {
                 <div className="flex justify-between text-foreground">
                   <span>Subtotal</span>
                   <span className="font-medium">
-                    ${(subtotal / 100).toFixed(2)}
+                    ${(originalSubtotal / 100).toFixed(2)}
+                  </span>
+                </div>
+                {totalSavings > 0 && (
+                  <div className="flex justify-between text-accent">
+                    <span>Sale Discount</span>
+                    <span className="font-medium">
+                      -${(totalSavings / 100).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between text-foreground">
+                  <span>Shipping</span>
+                  <span className="font-medium">$0.00</span>
+                </div>
+                <div className="flex justify-between text-foreground">
+                  <span>Tax (8.25%)</span>
+                  <span className="font-medium">
+                    ${(tax / 100).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -280,7 +333,7 @@ const Cart = () => {
                 <div className="flex justify-between text-foreground text-lg font-bold">
                   <span>Total</span>
                   <span className="text-primary">
-                    ${(subtotal / 100).toFixed(2)}
+                    ${(total / 100).toFixed(2)}
                   </span>
                 </div>
               </div>

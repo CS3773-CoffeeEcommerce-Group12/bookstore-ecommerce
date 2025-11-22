@@ -196,10 +196,11 @@ const Checkout = () => {
     return null;
   }
 
-  const subtotal = cartData.items.reduce(
-    (sum, item) => sum + item.items.price_cents * item.qty,
-    0
-  );
+  const subtotal = cartData.items.reduce((sum, item) => {
+    const isOnSale = item.items.on_sale && item.items.sale_price_cents;
+    const discountedPrice = isOnSale ? (item.items.sale_price_cents || item.items.price_cents) : item.items.price_cents;
+    return sum + discountedPrice * item.qty;
+  }, 0);
   const discountAmount = Math.round((subtotal * appliedDiscount) / 100);
   const afterDiscount = subtotal - discountAmount;
   const tax = Math.round(afterDiscount * 0.0825);
@@ -226,24 +227,40 @@ const Checkout = () => {
           </h2>
 
           <div className="space-y-4 mb-6">
-            {cartData.items.map((item) => (
-              <div key={item.item_id} className="flex justify-between items-center">
-                <div className="flex gap-3 items-center">
-                  <img
-                    src={item.items.img_url || '/placeholder.svg'}
-                    alt={item.items.name}
-                    className="h-16 w-12 object-cover rounded"
-                  />
-                  <div>
-                    <p className="font-medium text-foreground">{item.items.name}</p>
-                    <p className="text-sm text-muted-foreground">Qty: {item.qty}</p>
+            {cartData.items.map((item) => {
+              const isOnSale = item.items.on_sale && item.items.sale_price_cents;
+              const salePercent = item.items.sale_percentage || 0;
+              const discountedPrice = isOnSale ? (item.items.sale_price_cents || item.items.price_cents) : item.items.price_cents;
+
+              return (
+                <div key={item.item_id} className="flex justify-between items-center">
+                  <div className="flex gap-3 items-center">
+                    <img
+                      src={item.items.img_url || '/placeholder.svg'}
+                      alt={item.items.name}
+                      className="h-16 w-12 object-cover rounded"
+                    />
+                    <div>
+                      <p className="font-medium text-foreground">{item.items.name}</p>
+                      <p className="text-sm text-muted-foreground">Qty: {item.qty}</p>
+                      {isOnSale && (
+                        <p className="text-xs text-accent font-semibold">{salePercent}% OFF</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {isOnSale && (
+                      <p className="text-sm line-through text-muted-foreground">
+                        ${((item.items.price_cents * item.qty) / 100).toFixed(2)}
+                      </p>
+                    )}
+                    <p className={`font-medium ${isOnSale ? 'text-accent' : 'text-foreground'}`}>
+                      ${((discountedPrice * item.qty) / 100).toFixed(2)}
+                    </p>
                   </div>
                 </div>
-                <p className="font-medium text-foreground">
-                  ${((item.items.price_cents * item.qty) / 100).toFixed(2)}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="border-t border-border pt-4 space-y-2">
@@ -257,6 +274,10 @@ const Checkout = () => {
                 <span>-${(discountAmount / 100).toFixed(2)}</span>
               </div>
             )}
+            <div className="flex justify-between text-foreground">
+              <span>Shipping</span>
+              <span>$0.00</span>
+            </div>
             <div className="flex justify-between text-foreground">
               <span>Tax (8.25%)</span>
               <span>${(tax / 100).toFixed(2)}</span>

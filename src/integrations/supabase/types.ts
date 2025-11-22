@@ -385,8 +385,16 @@ export type Database = {
     }
     Functions: {
       fn_checkout: {
-        Args: { p_cart_id: string; p_discount_code?: string }
+        Args: { p_cart_id: string; p_discount_code?: string; p_shipping_address_id?: string }
         Returns: Json
+      }
+      fn_delete_book: {
+        Args: { p_book_id: string }
+        Returns: void
+      }
+      fn_delete_books: {
+        Args: { p_book_ids: string[] }
+        Returns: void
       }
       has_role: {
         Args: {

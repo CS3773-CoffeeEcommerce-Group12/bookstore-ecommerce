@@ -264,8 +264,8 @@ export default function AdminOverview() {
               <BarChart2 className="h-7 w-7 text-primary" />
               <span className="text-lg font-semibold">Order Stats</span>
             </div>
-            <Tabs defaultValue={view} onValueChange={(v) => setView(v as typeof view)} className="sm:hidden">
-              <TabsList className="grid grid-cols-3 w-full">
+            <Tabs defaultValue={view} onValueChange={(v) => setView(v as typeof view)}>
+              <TabsList className="grid grid-cols-3 w-full sm:w-auto">
                 {(['daily', 'weekly', 'monthly'] as const).map((v) => (
                   <TabsTrigger
                     key={v}
