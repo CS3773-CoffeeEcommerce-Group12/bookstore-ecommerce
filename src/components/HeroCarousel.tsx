@@ -1,5 +1,5 @@
 /* =====================================================
- *  HeroCarousel — Fixed Height + Line-Clamp + Sale Tag
+ *  HeroCarousel — Auto Scroll + Mobile Dots + Clean Logic
  * ===================================================== */
 
 import { useState, useEffect } from "react";
@@ -36,16 +36,29 @@ export const HeroCarousel = () => {
     },
   });
 
+  /* =====================================================
+   *  Auto-scroll (slow) + Sync Slide State
+   * ===================================================== */
   useEffect(() => {
     if (!api) return;
+
+    // Keep UI synced to carousel
     setCurrent(api.selectedScrollSnap());
     api.on("select", () => setCurrent(api.selectedScrollSnap()));
+
+    // MUCH slower auto-scroll (8 seconds)
+    const interval = setInterval(() => {
+      api.scrollNext();
+    }, 8000);
+
+    return () => clearInterval(interval);
   }, [api]);
 
   if (!featuredBooks.length) return null;
 
   return (
     <div className="relative w-full overflow-hidden min-h-[500px] md:min-h-[550px] lg:min-h-[600px]">
+
       {/* ===== BACKGROUND IMAGE ===== */}
       <div className="absolute inset-0">
         <img
@@ -60,7 +73,7 @@ export const HeroCarousel = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/20" />
       </div>
 
-      {/* ===== MAIN CONTENT WRAPPER ===== */}
+      {/* ===== MAIN CONTENT ===== */}
       <div className="relative w-full mx-auto px-6 md:px-10 pt-20 pb-10 flex items-center justify-center">
         <Carousel
           setApi={setApi}
@@ -79,58 +92,38 @@ export const HeroCarousel = () => {
                     md:ml-6 lg:ml-10
                   "
                 >
-                  {/* ===== BOOK IMAGE (Mobile First) ===== */}
-                  <div
-                    className="
-                      w-full md:w-[53%] md:hidden
-                      flex justify-center items-center
-                    "
-                  >
+                  {/* ===== Mobile Image ===== */}
+                  <div className="w-full md:w-[53%] md:hidden flex justify-center">
                     <div className="relative">
-                      {/* Sale tag */}
                       {book.on_sale && book.sale_percentage && (
                         <div className="absolute top-2 left-2 z-10 bg-accent text-accent-foreground px-3 py-1 rounded-md text-xs font-bold shadow-lg">
                           {Math.round(book.sale_percentage)}% OFF
                         </div>
                       )}
-
                       <img
                         src={book.img_url || "/placeholder.svg"}
                         alt={book.name}
-                        className="
-                          h-[280px] sm:h-[320px]
-                          object-contain rounded-lg
-                        "
+                        className="h-[280px] sm:h-[320px] object-contain rounded-lg"
                       />
                     </div>
                   </div>
 
-                  {/* ===== LEFT: WHITE CARD ===== */}
+                  {/* ===== LEFT PANEL ===== */}
                   <div className="w-full md:w-[47%]">
                     <div
                       className="
                         bg-white/80 backdrop-blur-xl
                         rounded-xl border border-white/40 p-6 sm:p-8
-
                         h-auto md:h-[380px] lg:h-[420px]
                         grid grid-rows-[auto,1fr,auto] gap-3
                       "
                     >
-                      {/* Row 1: tag, title, author */}
                       <div>
                         <span className="text-accent text-xs font-semibold uppercase tracking-widest">
                           Featured Collection
                         </span>
 
-                        <h1
-                          className="
-                            text-3xl md:text-4xl lg:text-5xl
-                            font-bold mt-2 text-foreground
-                            leading-snug
-                            line-clamp-2
-                            pb-2
-                          "
-                        >
+                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mt-2 text-foreground leading-snug line-clamp-2 pb-2">
                           {book.name}
                         </h1>
 
@@ -139,25 +132,22 @@ export const HeroCarousel = () => {
                         </p>
                       </div>
 
-                      {/* Row 2: description */}
+                      {/* Description */}
                       <div className="overflow-hidden max-h-[4.5rem] md:max-h-[6rem] lg:max-h-[7.5rem]">
-                        <p
-                          className="
-                            text-sm text-muted-foreground leading-relaxed
-                            line-clamp-3 md:line-clamp-3 lg:line-clamp-3
-                          "
-                        >
+                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
                           {book.description ||
                             "A wonderful addition to your collection. Discover engaging stories and beautiful editions from our curated selection."}
                         </p>
                       </div>
 
-                      {/* Row 3: bottom — price + button */}
+                      {/* Price + Button */}
                       <div className="pt-1">
                         {(() => {
                           const isOnSale = book.on_sale && book.sale_price_cents;
                           const salePercent = book.sale_percentage || 0;
-                          const discountedPrice = isOnSale ? (book.sale_price_cents || book.price_cents) : book.price_cents;
+                          const discountedPrice = isOnSale
+                            ? book.sale_price_cents || book.price_cents
+                            : book.price_cents;
 
                           return (
                             <div className="flex items-center gap-3">
@@ -188,17 +178,9 @@ export const HeroCarousel = () => {
                     </div>
                   </div>
 
-                  {/* ===== RIGHT: BOOK IMAGE + SALE TAG (Desktop Only) ===== */}
-                  <div
-                    className="
-                      hidden md:flex
-                      w-full md:w-[53%]
-                      justify-end items-center
-                      md:mr-10 lg:mr-20
-                    "
-                  >
+                  {/* ===== Desktop Image ===== */}
+                  <div className="hidden md:flex w-full md:w-[53%] justify-end md:mr-10 lg:mr-20">
                     <div className="relative">
-                      {/* Sale tag */}
                       {book.on_sale && book.sale_percentage && (
                         <div className="absolute top-2 left-2 z-10 bg-accent text-accent-foreground px-3 py-1 rounded-md text-xs font-bold shadow-lg">
                           {Math.round(book.sale_percentage)}% OFF
@@ -208,10 +190,7 @@ export const HeroCarousel = () => {
                       <img
                         src={book.img_url || "/placeholder.svg"}
                         alt={book.name}
-                        className="
-                          h-[380px] lg:h-[420px]
-                          object-contain rounded-lg
-                        "
+                        className="h-[380px] lg:h-[420px] object-contain rounded-lg"
                       />
                     </div>
                   </div>
@@ -220,37 +199,28 @@ export const HeroCarousel = () => {
             ))}
           </CarouselContent>
 
-          {/* ===== ARROWS ===== */}
-          <CarouselPrevious
-            className="
-              hidden md:flex
-              absolute left-0 -translate-x-10
-              top-1/2 -translate-y-1/2
-              h-10 w-10
-              items-center justify-center
-              bg-transparent hover:bg-transparent
-              text-white hover:text-accent
-              border-none shadow-none
-              hover:scale-110 transition-all
-              z-40
-            "
-          />
-          <CarouselNext
-            className="
-              hidden md:flex
-              absolute right-0 translate-x-10
-              top-1/2 -translate-y-1/2
-              h-10 w-10
-              items-center justify-center
-              bg-transparent hover:bg-transparent
-              text-white hover:text-accent
-              border-none shadow-none
-              hover:scale-110 transition-all
-              z-40
-            "
-          />
+          {/* ===== Arrows (Desktop only) ===== */}
+          <CarouselPrevious className="hidden md:flex absolute left-0 -translate-x-10 top-1/2 -translate-y-1/2 h-10 w-10 text-white hover:text-accent hover:scale-110 transition-all shadow-none border-none bg-transparent" />
+          <CarouselNext className="hidden md:flex absolute right-0 translate-x-10 top-1/2 -translate-y-1/2 h-10 w-10 text-white hover:text-accent hover:scale-110 transition-all shadow-none border-none bg-transparent" />
         </Carousel>
       </div>
+
+      {/* ======================== DOTS (Mobile only) ======================== */}
+<div className="absolute bottom-6 w-full flex justify-center gap-2 md:hidden">
+  {featuredBooks.map((_, index) => (
+    <button
+      key={index}
+      onClick={() => api?.scrollTo(index)}
+      aria-label={`Go to slide ${index + 1}`}   // ✔ accessibility fix
+      className={`h-3 w-3 rounded-full transition-all ${
+        current === index
+          ? "bg-accent scale-110 shadow-md"
+          : "bg-white/40 hover:bg-white/70"
+      }`}
+    />
+  ))}
+</div>
+
     </div>
   );
 };

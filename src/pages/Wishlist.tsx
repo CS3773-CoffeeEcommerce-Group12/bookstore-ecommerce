@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import { BookCard } from "@/components/BookCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface WishlistItem {
   id: number;
@@ -15,6 +16,7 @@ interface WishlistItem {
 }
 
 const Wishlist = () => {
+  const { user } = useAuth();
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
 
   useEffect(() => {
@@ -28,6 +30,29 @@ const Wishlist = () => {
     localStorage.setItem("wishlist", JSON.stringify(updated));
     toast.success("Removed from wishlist");
   };
+
+  // 🔒 INTEGRATION OF HIS ATTEMPT:
+  // If user is not logged in → show login prompt instead of wishlist
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <Card className="max-w-md text-center bg-card backdrop-blur-sm border-border p-8">
+          <Heart className="h-20 w-20 mx-auto mb-6 text-muted" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Sign in to view your wishlist
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            You need to be logged in to access your wishlist.
+          </p>
+          <Link to="/auth">
+            <Button size="lg" className="w-full rounded-lg">
+              Go to Login
+            </Button>
+          </Link>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
@@ -65,21 +90,19 @@ const Wishlist = () => {
               <div key={item.id} className="relative group">
 
                 {/* Remove Button */}
-                {/* Remove Button */}
-<button
-  aria-label="Remove from wishlist"
-  title="Remove from wishlist"
-  onClick={() => removeFromWishlist(item.id)}
-  className="
-    absolute top-2 right-2 z-20 
-    bg-white/90 dark:bg-black/80 
-    border border-border rounded-full 
-    p-1 transition hover:bg-accent hover:text-accent-foreground
-  "
->
-  <Heart className="w-4 h-4 fill-accent group-hover:fill-accent-foreground" />
-</button>
-
+                <button
+                  aria-label="Remove from wishlist"
+                  title="Remove from wishlist"
+                  onClick={() => removeFromWishlist(item.id)}
+                  className="
+                    absolute top-2 right-2 z-20 
+                    bg-white/90 dark:bg-black/80 
+                    border border-border rounded-full 
+                    p-1 transition hover:bg-accent hover:text-accent-foreground
+                  "
+                >
+                  <Heart className="w-4 h-4 fill-accent group-hover:fill-accent-foreground" />
+                </button>
 
                 {/* Book Card */}
                 <Link to={`/book/${item.id}`} className="block">
