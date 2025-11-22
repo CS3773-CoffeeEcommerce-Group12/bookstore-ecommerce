@@ -8,7 +8,7 @@ import { BookCard } from "@/components/BookCard";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface WishlistItem {
-  id: number;
+  id: string;
   name: string;
   price_cents: number;
   img_url: string;
@@ -19,20 +19,28 @@ const Wishlist = () => {
   const { user } = useAuth();
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
 
+  // Load wishlist specific to user
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("wishlist") || "[]");
-    setWishlistItems(saved);
-  }, []);
+    if (!user) return;
 
-  const removeFromWishlist = (bookId: number) => {
+    const key = `wishlist_${user.id}`;
+    const saved = JSON.parse(localStorage.getItem(key) || "[]");
+    setWishlistItems(saved);
+  }, [user]);
+
+  const removeFromWishlist = (bookId: string) => {
+    if (!user) return;
+
+    const key = `wishlist_${user.id}`;
     const updated = wishlistItems.filter((item) => item.id !== bookId);
+
     setWishlistItems(updated);
-    localStorage.setItem("wishlist", JSON.stringify(updated));
+    localStorage.setItem(key, JSON.stringify(updated));
+
     toast.success("Removed from wishlist");
   };
 
-  // 🔒 INTEGRATION OF HIS ATTEMPT:
-  // If user is not logged in → show login prompt instead of wishlist
+  // Logged-out state
   if (!user) {
     return (
       <main className="min-h-screen bg-background p-6 flex items-center justify-center">
@@ -62,9 +70,7 @@ const Wishlist = () => {
         <div className="flex items-center gap-3">
           <Heart className="h-8 w-8 text-accent" />
           <div>
-            <h1 className="text-4xl font-bold text-foreground">
-              My Wishlist
-            </h1>
+            <h1 className="text-4xl font-bold text-foreground">My Wishlist</h1>
             <p className="text-muted-foreground">Books you've saved for later</p>
           </div>
         </div>
@@ -84,7 +90,7 @@ const Wishlist = () => {
             </Link>
           </Card>
         ) : (
-          /* Wishlist Grid */
+          // Wishlist Grid
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
             {wishlistItems.map((item) => (
               <div key={item.id} className="relative group">
@@ -95,9 +101,9 @@ const Wishlist = () => {
                   title="Remove from wishlist"
                   onClick={() => removeFromWishlist(item.id)}
                   className="
-                    absolute top-2 right-2 z-20 
+                    absolute top-2 right-2 z-20
                     bg-white/90 dark:bg-black/80 
-                    border border-border rounded-full 
+                    border border-border rounded-full
                     p-1 transition hover:bg-accent hover:text-accent-foreground
                   "
                 >
@@ -111,7 +117,7 @@ const Wishlist = () => {
                     author={item.author || "Unknown Author"}
                     price={`$${(item.price_cents / 100).toFixed(2)}`}
                     image={item.img_url}
-                    stock={999}  // wishlist ignores stock
+                    stock={999}
                     compact={true}
                   />
                 </Link>

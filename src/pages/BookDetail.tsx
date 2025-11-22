@@ -13,12 +13,10 @@ import {
   ShoppingCart,
   BookOpen,
   Calendar,
-  User,
   Hash,
   FileText,
   ChevronDown,
   Heart,
-  Share2,
   Facebook,
   Instagram,
   ZoomIn,
@@ -27,6 +25,15 @@ import {
 import { toast } from 'sonner';
 import { Item } from '@/types';
 import { bookService } from '@/services/bookService';
+
+// TYPE FOR WISHLIST ITEMS
+interface WishlistItem {
+  id: string;
+  name: string;
+  price_cents: number;
+  img_url: string;
+  author?: string;
+}
 
 // Custom X (formerly Twitter) icon
 const XIcon = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
@@ -43,25 +50,24 @@ const XIcon = ({ size = 24, className = '' }: { size?: number; className?: strin
 
 const BookDetail = () => {
   const { id } = useParams<{ id: string }>();
-
-  // force a plain string for all DB operations
   const bookId = id ?? '';
 
   const navigate = useNavigate();
-
-  // Scroll to top when book ID changes
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [bookId]);
-
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+
   const [quantity, setQuantity] = useState(1);
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [justAddedToCart, setJustAddedToCart] = useState(false);
 
+  // Scroll to top when book changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [bookId]);
+
+  // ===== LOAD BOOK FROM SUPABASE =====
   const { data: book, isLoading } = useQuery({
     queryKey: ['item', bookId],
     queryFn: async () => {
@@ -77,7 +83,7 @@ const BookDetail = () => {
     enabled: !!bookId,
   });
 
-  // Fetch Google Books data
+  // Google Books enrichment
   const { data: enrichedData } = useQuery({
     queryKey: ['google-books-details', book?.isbn],
     queryFn: async () => {
@@ -87,6 +93,7 @@ const BookDetail = () => {
     enabled: !!book?.isbn,
   });
 
+  // Related books
   const { data: relatedBooks = [] } = useQuery({
     queryKey: ['related-items', bookId],
     queryFn: async () => {
@@ -103,27 +110,36 @@ const BookDetail = () => {
     enabled: !!bookId,
   });
 
-  // Track recently viewed + check wishlist status
+  // ===== TRACK RECENT + USER-SPECIFIC WISHLIST =====
   useEffect(() => {
-    if (book) {
-      const recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
-      const bookData = {
-        id: book.id,
-        name: book.name,
-        price_cents: book.price_cents,
-        img_url: book.img_url,
-        author: book.author,
-      };
+    if (!book) return;
 
-      const filtered = recentlyViewed.filter((b: any) => b.id !== book.id);
-      const updated = [bookData, ...filtered].slice(0, 6);
-      localStorage.setItem('recentlyViewed', JSON.stringify(updated));
+    // Recently viewed
+    const recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+    const bookData = {
+  id: book.id,
+  name: book.name,
+  price_cents: book.price_cents,
+  img_url: book.img_url ?? "",
+  author: book.author ?? undefined,
+};
 
-      const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-      setIsFavorited(wishlist.some((b: any) => b.id === book.id));
+
+    const filtered = recentlyViewed.filter((b: any) => b.id !== book.id);
+    const updated = [bookData, ...filtered].slice(0, 6);
+    localStorage.setItem('recentlyViewed', JSON.stringify(updated));
+
+    // Wishlist check per user
+    if (user) {
+      const key = `wishlist_${user.id}`;
+      const wishlist: WishlistItem[] = JSON.parse(localStorage.getItem(key) || '[]');
+      setIsFavorited(wishlist.some((b) => b.id === book.id));
+    } else {
+      setIsFavorited(false);
     }
-  }, [book]);
+  }, [book, user]);
 
+  // ===== ADD TO CART =====
   const addToCartMutation = useMutation({
     mutationFn: async () => {
       if (!user) {
@@ -132,7 +148,7 @@ const BookDetail = () => {
         throw new Error('User not signed in');
       }
 
-      // Get or create cart
+      // Get/create cart
       let { data: cart } = await supabase
         .from('carts')
         .select('id')
@@ -150,7 +166,7 @@ const BookDetail = () => {
         cart = newCart;
       }
 
-      // Check if item already in cart
+      // Update or add item
       const { data: existingItem } = await supabase
         .from('cart_items')
         .select('qty')
@@ -159,23 +175,19 @@ const BookDetail = () => {
         .single();
 
       if (existingItem) {
-        const { error } = await supabase
+        await supabase
           .from('cart_items')
           .update({ qty: existingItem.qty + quantity })
           .eq('cart_id', cart.id)
           .eq('item_id', bookId);
-
-        if (error) throw error;
       } else {
-        const { error } = await supabase
+        await supabase
           .from('cart_items')
           .insert({
             cart_id: cart.id,
             item_id: bookId,
             qty: quantity,
           });
-
-        if (error) throw error;
       }
     },
     onSuccess: () => {
@@ -183,89 +195,49 @@ const BookDetail = () => {
       toast.success('Added to cart!');
       setJustAddedToCart(true);
     },
-    onError: (error: any) => {
-      if (error?.message === 'User not signed in') {
-        return;
-      }
-      toast.error('Failed to add to cart');
-    },
   });
 
-  const handleShare = (platform: string) => {
-    const url = window.location.href;
-    const text = `Check out ${book?.name}!`;
-
-    const shareUrls: Record<string, string> = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
-      instagram: 'https://www.instagram.com/',
-    };
-
-    if (platform === 'instagram') {
-      window.open(shareUrls[platform], '_blank');
-      toast.info('Copy the link and share on Instagram!');
-    } else {
-      window.open(shareUrls[platform], '_blank', 'width=600,height=400');
-      toast.info('Opening share dialog...');
-    }
-  };
-
-  // ⭐ UPDATED WITH HIS INTENT IMPLEMENTED CLEANLY
+  // ===== WISHLIST TOGGLE (LOCAL STORAGE, USER SPECIFIC) =====
   const toggleFavorite = () => {
     if (!book) return;
 
-    // 🔒 Require login BEFORE modifying wishlist
     if (!user) {
       toast.warning("Please log in to use your wishlist");
       navigate("/auth");
       return;
     }
 
-    const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-    const bookData = {
-      id: book.id,
-      name: book.name,
-      price_cents: book.price_cents,
-      img_url: book.img_url,
-      author: book.author,
-    };
+    const key = `wishlist_${user.id}`;
+    const wishlist: WishlistItem[] = JSON.parse(localStorage.getItem(key) || "[]");
 
-    if (isFavorited) {
-      const filtered = wishlist.filter((b: any) => b.id !== book.id);
-      localStorage.setItem('wishlist', JSON.stringify(filtered));
+    const exists = wishlist.some((i) => i.id === book.id);
+
+    if (exists) {
+      const updated = wishlist.filter((i) => i.id !== book.id);
+      localStorage.setItem(key, JSON.stringify(updated));
       setIsFavorited(false);
-      toast.success('Removed from wishlist!');
+      toast.success("Removed from wishlist");
     } else {
-      const updated = [bookData, ...wishlist];
-      localStorage.setItem('wishlist', JSON.stringify(updated));
+      const newItem: WishlistItem = {
+  id: book.id,
+  name: book.name,
+  price_cents: book.price_cents,
+  img_url: book.img_url ?? "",       // 👈 FIX 1
+  author: book.author ?? undefined,  // 👈 FIX 2
+};
+
+
+      localStorage.setItem(key, JSON.stringify([newItem, ...wishlist]));
       setIsFavorited(true);
-      toast.success('Added to wishlist!');
+      toast.success("Added to wishlist");
     }
   };
 
-  // Mock review data
+  // Mock reviews
   const mockReviews = [
-    {
-      id: 1,
-      name: 'Sarah M.',
-      rating: 5,
-      date: '2024-11-15',
-      text: `Absolutely loved "${book?.name}"!`,
-    },
-    {
-      id: 2,
-      name: 'John D.',
-      rating: 4,
-      date: '2024-11-10',
-      text: `"${book?.name}" exceeded my expectations.`,
-    },
-    {
-      id: 3,
-      name: 'Emily R.',
-      rating: 5,
-      date: '2024-11-05',
-      text: `One of the best books I've read this year!`,
-    },
+    { id: 1, name: 'Sarah M.', rating: 5, date: '2024-11-15', text: `Absolutely loved "${book?.name}"!` },
+    { id: 2, name: 'John D.', rating: 4, date: '2024-11-10', text: `"${book?.name}" exceeded my expectations.` },
+    { id: 3, name: 'Emily R.', rating: 5, date: '2024-11-05', text: `One of the best books I've read this year!` },
   ];
 
   if (isLoading) {
@@ -316,10 +288,10 @@ const BookDetail = () => {
           </Button>
         </Link>
 
-        {/* Book Details Layout */}
+        {/* Book Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 mb-12">
 
-          {/* Cover */}
+          {/* Book Cover */}
           <div className="lg:col-span-3 flex flex-col items-center lg:items-start order-first">
             <div
               className="relative group cursor-pointer w-full max-w-sm lg:max-w-none"
@@ -332,10 +304,7 @@ const BookDetail = () => {
                 className="relative w-full object-cover rounded-xl shadow-medium transition-opacity duration-300"
               />
               <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-xl flex items-center justify-center transition-opacity">
-                <ZoomIn
-                  className="text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                  size={40}
-                />
+                <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity" size={40} />
               </div>
               <p className="text-center text-base text-muted-foreground mt-4">
                 by {book.author || 'Unknown Author'}
@@ -358,7 +327,7 @@ const BookDetail = () => {
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleShare('facebook')}
+                  onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')}
                   className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-[#1877F2] text-white rounded-lg hover:opacity-90"
                 >
                   <Facebook size={18} />
@@ -366,7 +335,7 @@ const BookDetail = () => {
                 </button>
 
                 <button
-                  onClick={() => handleShare('twitter')}
+                  onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`Check out ${book.name}!`)}`, '_blank')}
                   className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-foreground text-background rounded-lg hover:opacity-90"
                 >
                   <XIcon size={18} />
@@ -374,7 +343,10 @@ const BookDetail = () => {
                 </button>
 
                 <button
-                  onClick={() => handleShare('instagram')}
+                  onClick={() => {
+                    window.open('https://www.instagram.com/', '_blank');
+                    toast.info('Copy the link and share on Instagram!');
+                  }}
                   className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gradient-warm text-accent-foreground rounded-lg hover:opacity-90"
                 >
                   <Instagram size={18} />
@@ -398,7 +370,7 @@ const BookDetail = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Middle Column: Title + Description + Details */}
+          {/* Middle Column - Title + Description */}
           <div className="lg:col-span-6 space-y-4">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{book.name}</h1>
 
@@ -406,9 +378,7 @@ const BookDetail = () => {
             <div className="p-4 bg-card/50 rounded-xl border border-border">
               {(() => {
                 const description =
-                  book.description ||
-                  enrichedData?.description ||
-                  'No description available.';
+                  book.description || enrichedData?.description || 'No description available.';
                 const isLong = description.length > 200;
                 const truncated = isLong ? description.slice(0, 200) + '...' : description;
 
@@ -437,11 +407,9 @@ const BookDetail = () => {
                           className="mt-2 text-accent hover:text-accent/80 p-0 h-auto font-medium"
                         >
                           {isDescriptionOpen ? 'Read Less' : 'Read More'}
-                          <ChevronDown
-                            className={`ml-1 h-4 w-4 transition-transform ${
-                              isDescriptionOpen ? 'rotate-180' : ''
-                            }`}
-                          />
+                          <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${
+                            isDescriptionOpen ? 'rotate-180' : ''
+                          }`} />
                         </Button>
                       </CollapsibleTrigger>
                     )}
@@ -450,7 +418,7 @@ const BookDetail = () => {
               })()}
             </div>
 
-            {/* Book Info */}
+            {/* Book Details */}
             {(book.publisher ||
               enrichedData?.publisher?.[0] ||
               book.publish_year ||
@@ -467,58 +435,43 @@ const BookDetail = () => {
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   {(book.publisher || enrichedData?.publisher?.[0]) && (
-                    <div className="flex items-start gap-2">
-                      <BookOpen className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Publisher</p>
-                        <p className="text-foreground font-medium">
-                          {book.publisher || enrichedData?.publisher?.[0]}
-                        </p>
-                      </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Publisher</p>
+                      <p className="text-foreground font-medium">
+                        {book.publisher || enrichedData?.publisher?.[0]}
+                      </p>
                     </div>
                   )}
 
                   {(book.publish_year || enrichedData?.publish_year?.[0]) && (
-                    <div className="flex items-start gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Published</p>
-                        <p className="text-foreground font-medium">
-                          {book.publish_year || enrichedData?.publish_year?.[0]}
-                        </p>
-                      </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Published</p>
+                      <p className="text-foreground font-medium">
+                        {book.publish_year || enrichedData?.publish_year?.[0]}
+                      </p>
                     </div>
                   )}
 
                   {(book.page_count || enrichedData?.number_of_pages) && (
-                    <div className="flex items-start gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Pages</p>
-                        <p className="text-foreground font-medium">
-                          {book.page_count || enrichedData?.number_of_pages}
-                        </p>
-                      </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Pages</p>
+                      <p className="text-foreground font-medium">
+                        {book.page_count || enrichedData?.number_of_pages}
+                      </p>
                     </div>
                   )}
 
                   {book.isbn && (
-                    <div className="flex items-start gap-2">
-                      <Hash className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">ISBN-13</p>
-                        <p className="text-foreground font-medium text-xs">{book.isbn}</p>
-                      </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">ISBN-13</p>
+                      <p className="text-foreground font-medium text-xs">{book.isbn}</p>
                     </div>
                   )}
 
                   {book.isbn_10 && (
-                    <div className="flex items-start gap-2">
-                      <Hash className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">ISBN-10</p>
-                        <p className="text-foreground font-medium text-xs">{book.isbn_10}</p>
-                      </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">ISBN-10</p>
+                      <p className="text-foreground font-medium text-xs">{book.isbn_10}</p>
                     </div>
                   )}
                 </div>
@@ -526,18 +479,18 @@ const BookDetail = () => {
             )}
           </div>
 
-          {/* Right Sidebar: Price + Quantity + Add to Cart */}
+          {/* Right Sidebar - Price + Add to Cart */}
           <div className="lg:col-span-3 order-2 lg:order-last">
             <div className="p-4 sm:p-6 bg-card/50 rounded-xl space-y-4 sm:space-y-6 lg:sticky lg:top-24">
 
-              {/* Sale Badge */}
+              {/* SALE BADGE */}
               {book.on_sale && book.sale_percentage && (
                 <div className="absolute -top-3 -right-3 bg-gradient-warm text-accent-foreground px-4 py-2 rounded-full text-sm font-bold shadow-lg z-10">
                   {book.sale_percentage}% OFF SALE!
                 </div>
               )}
 
-              {/* Stock */}
+              {/* STOCK */}
               <div className="text-center">
                 {book.stock < 5 && book.stock > 0 && (
                   <span className="inline-block px-3 py-1 bg-accent/10 text-accent rounded-full text-sm font-semibold">
@@ -551,76 +504,56 @@ const BookDetail = () => {
                 )}
               </div>
 
-              {/* Price Breakdown */}
+              {/* PRICE BREAKDOWN */}
               {(() => {
                 const isOnSale = book.on_sale && book.sale_price_cents;
-                const salePercent = book.sale_percentage || 0;
                 const discounted = isOnSale
                   ? book.sale_price_cents || book.price_cents
                   : book.price_cents;
 
-                const originalSubtotal = book.price_cents * quantity;
-                const discountAmount = originalSubtotal - discounted * quantity;
-
                 return (
-                  <div className="space-y-3 border-b border-border pb-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Price</span>
-                      <div className="flex items-center gap-2">
-                        {isOnSale && (
-                          <span className="text-sm line-through text-muted-foreground">
-                            ${(book.price_cents / 100).toFixed(2)}
+                  <>
+                    <div className="space-y-3 border-b border-border pb-4">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Price</span>
+                        <div className="flex items-center gap-2">
+                          {isOnSale && (
+                            <span className="text-sm line-through text-muted-foreground">
+                              ${(book.price_cents / 100).toFixed(2)}
+                            </span>
+                          )}
+                          <span className={`text-lg font-semibold ${isOnSale ? 'text-accent' : ''}`}>
+                            ${(discounted / 100).toFixed(2)}
                           </span>
-                        )}
-                        <span className={`text-lg font-semibold ${isOnSale ? 'text-accent' : ''}`}>
-                          ${(discounted / 100).toFixed(2)}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Quantity</span>
+                        <span className="text-sm font-medium text-foreground">{quantity}</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Subtotal</span>
+                        <span className="text-base font-semibold text-foreground">
+                          ${((discounted * quantity) / 100).toFixed(2)}
                         </span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Shipping</span>
+                        <span className="text-sm text-muted-foreground">$0.00</span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Quantity</span>
-                      <span className="text-sm font-medium text-foreground">{quantity}</span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Subtotal</span>
-                      <span className="text-base font-semibold text-foreground">
-                        ${(originalSubtotal / 100).toFixed(2)}
+                    {/* FINAL TOTAL */}
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-lg font-bold text-foreground">Total</span>
+                      <span className="text-2xl font-bold text-primary">
+                        ${((discounted * quantity) / 100).toFixed(2)}
                       </span>
                     </div>
-
-                    {isOnSale && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-accent">Sale Discount ({salePercent}%)</span>
-                        <span className="text-base font-semibold text-accent">
-                          -${(discountAmount / 100).toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Shipping</span>
-                      <span className="text-sm text-muted-foreground">$0.00</span>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Total */}
-              {(() => {
-                const isOnSale = book.on_sale && book.sale_price_cents;
-                const discounted = isOnSale
-                  ? book.sale_price_cents || book.price_cents
-                  : book.price_cents;
-
-                return (
-                  <div className="flex justify-between items-center pt-2">
-                    <span className="text-lg font-bold text-foreground">Total</span>
-                    <span className="text-2xl font-bold text-primary">
-                      ${((discounted * quantity) / 100).toFixed(2)}
-                    </span>
-                  </div>
+                  </>
                 );
               })()}
 
@@ -673,7 +606,7 @@ const BookDetail = () => {
                 {book.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
               </Button>
 
-              {/* Checkout button */}
+              {/* Checkout */}
               {justAddedToCart && (
                 <Button
                   size="lg"
@@ -709,7 +642,6 @@ const BookDetail = () => {
               </div>
             </div>
 
-            {/* Rating bars */}
             <div className="mb-8 space-y-2">
               {[5, 4, 3, 2, 1].map((rating) => {
                 const count = mockReviews.filter((r) => r.rating === rating).length;
@@ -732,7 +664,7 @@ const BookDetail = () => {
               })}
             </div>
 
-            {/* Each review */}
+            {/* Individual reviews */}
             <div className="space-y-6">
               {mockReviews.map((review) => (
                 <div key={review.id} className="border-b border-border pb-6 last:border-none">
@@ -773,7 +705,7 @@ const BookDetail = () => {
           </div>
         </section>
 
-        {/* Related books */}
+        {/* Related Books */}
         {relatedBooks.length > 0 && (
           <section className="pb-12">
             <h2 className="text-2xl font-bold mb-6">You May Also Like</h2>
