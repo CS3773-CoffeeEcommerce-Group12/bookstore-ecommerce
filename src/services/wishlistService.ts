@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const wishlistService = {
   async getUserWishlist(userId: string) {
     const { data, error } = await supabase
-      .from('wishlist')
+      .from('wishlist' as any)
       .select(`
         id,
         item_id,
@@ -25,7 +25,7 @@ export const wishlistService = {
 
   async addToWishlist(userId: string, itemId: string) {
     const { data, error } = await supabase
-      .from('wishlist')
+      .from('wishlist' as any)
       .insert({ user_id: userId, item_id: itemId })
       .select()
       .single();
@@ -42,7 +42,7 @@ export const wishlistService = {
 
   async removeFromWishlist(userId: string, itemId: string) {
     const { error } = await supabase
-      .from('wishlist')
+      .from('wishlist' as any)
       .delete()
       .eq('user_id', userId)
       .eq('item_id', itemId);
@@ -52,7 +52,7 @@ export const wishlistService = {
 
   async isInWishlist(userId: string, itemId: string): Promise<boolean> {
     const { data, error } = await supabase
-      .from('wishlist')
+      .from('wishlist' as any)
       .select('id')
       .eq('user_id', userId)
       .eq('item_id', itemId)

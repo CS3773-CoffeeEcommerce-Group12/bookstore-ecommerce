@@ -118,7 +118,7 @@ const Checkout = () => {
 
       const { data, error } = await supabase.rpc('fn_checkout' as any, {
         p_cart_id: cartData.cartId,
-        p_discount_code: discountCode || undefined,
+        p_discount_code: discountCode?.trim() || null,
         p_shipping_address_id: addressId,
       });
 

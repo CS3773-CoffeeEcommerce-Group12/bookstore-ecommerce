@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LayoutGrid, ShoppingCart, Package, BookOpen, Percent, BarChart2 } from 'lucide-react';
+import { Menu, X, LayoutGrid, ShoppingCart, Package, BookOpen, Percent, BarChart2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     { to: '/admin/fulfillments', label: 'Fulfillments', icon: Package },
     { to: '/admin/books', label: 'Books', icon: BookOpen },
     { to: '/admin/discounts', label: 'Discounts', icon: Percent },
+    { to: '/admin/users', label: 'Users', icon: Users },
   ];
 
   const SidebarContent = () => (
