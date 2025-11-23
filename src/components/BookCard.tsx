@@ -47,6 +47,13 @@ export function BookCard({
           </Badge>
         )}
 
+        {/* IN STOCK BADGE */}
+        {stock > 0 && (
+          <Badge className="absolute top-2 right-2 bg-primary/80 text-primary-foreground text-xs shadow-md">
+            {stock === 1 ? "1 left" : `${stock} left`}
+          </Badge>
+        )}
+
         {/* SALE BADGE */}
         {onSale && (
           <Badge className="absolute top-2 left-2 bg-accent text-accent-foreground shadow-md">

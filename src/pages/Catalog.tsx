@@ -3,12 +3,13 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Item } from "@/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { BookCard } from '@/components/BookCard';
 import { Grid3x3, List, BookOpen } from 'lucide-react';
+import { Slider } from "@/components/ui/slider";
 
 const Catalog = () => {
   const { isAdmin } = useAuth();
@@ -17,7 +18,21 @@ const Catalog = () => {
     q: "",
     sort: "created_at",
     available: "1", // Default to "In Stock Only"
+    priceMin: 0,
+    priceMax: 100,
   });
+
+  // local search updates when user is typing (live search)
+  const [searchText, setSearchText] = useState(filters.q);
+
+  //waits 300 ms before applying the "updated search"
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters((prev) => ({ ...prev, q: searchText }));
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchText]);
 
   const { data: items = [], isLoading, error } = useQuery({
     queryKey: ["catalog", filters],
@@ -34,6 +49,17 @@ const Catalog = () => {
           `name.ilike.%${q}%,author.ilike.%${q}%,isbn.ilike.%${q}%`
         );
       }
+
+      // Price filter
+      query = query.gte(
+        "price_cents",
+        filters.priceMin * 100
+      );
+
+      query = query.lte(
+        "price_cents",
+        filters.priceMax * 100
+      );
 
       // Stock filter
       if (filters.available === "1") {
@@ -67,6 +93,7 @@ const Catalog = () => {
     e.preventDefault();
     const form = new FormData(e.currentTarget as HTMLFormElement);
     setFilters({
+      ...filters, // keeps the price filters
       q: form.get("q")?.toString() ?? "",
       sort: form.get("sort")?.toString() ?? "created_at",
       available: form.get("available")?.toString() ?? "0",
@@ -113,8 +140,31 @@ const Catalog = () => {
               name="q"
               placeholder="Search by book name, author, or ISBN..."
               defaultValue={filters.q}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
               className="flex-1 min-w-[200px] px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
             />
+
+            {/* Price range filter */}
+            <div className="flex flex-col w-full sm:w-64">
+              <label className="text-sm text-muted-foreground mb-1">
+                Price Range (${filters.priceMin} - ${filters.priceMax})
+              </label>
+
+              <Slider
+                min={0}
+                max={100}
+                step={1}
+                value={[filters.priceMin, filters.priceMax]}
+                onValueChange={(vals) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    priceMin: vals[0],
+                    priceMax: vals[1],
+                  }))
+                }
+              />
+            </div>
 
             <label htmlFor="sort" className="sr-only">
               Sort books by
@@ -348,7 +398,7 @@ const Catalog = () => {
             </p>
             <Button
               onClick={() =>
-                setFilters({ q: "", sort: "created_at", available: "1" })
+                setFilters({ q: "", sort: "created_at", available: "1", priceMin: 0, priceMax: 100 })
               }
               className="btn-primary"
             >

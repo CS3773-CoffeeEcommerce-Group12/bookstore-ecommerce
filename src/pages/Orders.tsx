@@ -30,6 +30,7 @@ import { Order as OrderType, OrderItem as OrderItemType, Item, ShippingAddress }
 import { useToast } from '@/hooks/use-toast';
 
 const Orders = () => {
+  const [orderSearch, setOrderSearch] = useState(""); // added search bar state
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -273,6 +274,28 @@ const Orders = () => {
     // An order is cancelled if ALL its fulfillments are cancelled
     return fulfillments.length > 0 && fulfillments.every(f => f.status === 'cancelled');
   });
+
+  // Filter function for order search
+  const filterOrders = (orders: OrderType[]) => {
+    if (!orderSearch.trim()) return orders;
+
+    const searchLower = orderSearch.toLowerCase();
+    return orders.filter(order => {
+      // Search by order ID
+      if (order.id.toLowerCase().includes(searchLower)) return true;
+
+      // Search by customer email (if admin)
+      if (order.customer_email?.toLowerCase().includes(searchLower)) return true;
+
+      // Search by item names
+      const hasMatchingItem = order.order_items?.some(orderItem =>
+        orderItem.items?.name?.toLowerCase().includes(searchLower)
+      );
+      if (hasMatchingItem) return true;
+
+      return false;
+    });
+  };
 
   const renderDeliveryStatusSteps = (currentStep: number) => {
     const steps = [
@@ -627,6 +650,17 @@ const Orders = () => {
               </TabsTrigger>
             </TabsList>
 
+            {/* Search bar for filtering orders */}
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search orders by ID, email, or item name..."
+                value={orderSearch}
+                onChange={(e) => setOrderSearch(e.target.value)}
+                className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
+              />
+            </div>
+
             <TabsContent value="my-orders">
               {/* Nested tabs for admin's personal orders */}
               <Tabs defaultValue="upcoming" className="space-y-6">
@@ -656,7 +690,7 @@ const Orders = () => {
 
                 <TabsContent value="upcoming" className="space-y-4">
                   {upcomingOrders.length > 0 ? (
-                    upcomingOrders.map(renderOrderCard)
+                    filterOrders(upcomingOrders).map(renderOrderCard)
                   ) : (
                     <div className="text-center py-12">
                       <Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -668,7 +702,7 @@ const Orders = () => {
 
                 <TabsContent value="history" className="space-y-4">
                   {completedOrders.length > 0 ? (
-                    completedOrders.map(renderOrderCard)
+                    filterOrders(completedOrders).map(renderOrderCard)
                   ) : (
                     <div className="text-center py-12">
                       <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -680,7 +714,7 @@ const Orders = () => {
 
                 <TabsContent value="cancelled" className="space-y-4">
                   {cancelledOrders.length > 0 ? (
-                    cancelledOrders.map(renderOrderCard)
+                    filterOrders(cancelledOrders).map(renderOrderCard)
                   ) : (
                     <div className="text-center py-12">
                       <XCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -702,7 +736,7 @@ const Orders = () => {
 
             <TabsContent value="all-orders">
               <div className="space-y-4">
-                {allOrders.map(renderOrderCard)}
+                {filterOrders(allOrders).map(renderOrderCard)}
               </div>
             </TabsContent>
           </Tabs>
@@ -734,7 +768,7 @@ const Orders = () => {
 
             <TabsContent value="upcoming" className="space-y-4">
               {upcomingOrders.length > 0 ? (
-                upcomingOrders.map(renderOrderCard)
+                filterOrders(upcomingOrders).map(renderOrderCard)
               ) : (
                 <div className="text-center py-12">
                   <Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -746,7 +780,7 @@ const Orders = () => {
 
             <TabsContent value="history" className="space-y-4">
               {completedOrders.length > 0 ? (
-                completedOrders.map(renderOrderCard)
+                filterOrders(completedOrders).map(renderOrderCard)
               ) : (
                 <div className="text-center py-12">
                   <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -758,7 +792,7 @@ const Orders = () => {
 
             <TabsContent value="cancelled" className="space-y-4">
               {cancelledOrders.length > 0 ? (
-                cancelledOrders.map(renderOrderCard)
+                filterOrders(cancelledOrders).map(renderOrderCard)
               ) : (
                 <div className="text-center py-12">
                   <XCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
