@@ -22,8 +22,6 @@ export const fulfillmentService = {
   // Create a new fulfillment record
   async createFulfillment(data: CreateFulfillmentData): Promise<OrderFulfillment | null> {
     try {
-      console.log('Creating fulfillment with data:', data);
-      
       const { data: result, error } = await supabase
         .from('order_fulfillments')
         .insert({
@@ -37,14 +35,11 @@ export const fulfillmentService = {
         .single();
 
       if (error) {
-        console.error('Error creating fulfillment:', error);
         return null;
       }
-      
-      console.log('Created fulfillment result:', result);
+
       return result as OrderFulfillment;
     } catch (error) {
-      console.error('Error in createFulfillment:', error);
       return null;
     }
   },
@@ -59,12 +54,10 @@ export const fulfillmentService = {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching fulfillments by order ID:', error);
         return [];
       }
       return (data || []) as OrderFulfillment[];
     } catch (error) {
-      console.error('Error in getFulfillmentsByOrderId:', error);
       return [];
     }
   },
@@ -80,12 +73,10 @@ export const fulfillmentService = {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching fulfillments by order item:', error);
         return [];
       }
       return (data || []) as OrderFulfillment[];
     } catch (error) {
-      console.error('Error in getFulfillmentsByOrderItem:', error);
       return [];
     }
   },
@@ -93,8 +84,6 @@ export const fulfillmentService = {
   // Get all pending fulfillments (for admin dashboard)
   async getPendingFulfillments(): Promise<any[]> {
     try {
-      console.log('Fetching pending fulfillments...');
-      
       // First, get the basic fulfillments
       const { data: fulfillments, error: fulfillmentError } = await supabase
         .from('order_fulfillments')
@@ -103,12 +92,10 @@ export const fulfillmentService = {
         .order('created_at', { ascending: true });
 
       if (fulfillmentError) {
-        console.error('Error fetching pending fulfillments:', fulfillmentError);
         return [];
       }
 
       if (!fulfillments || fulfillments.length === 0) {
-        console.log('No pending fulfillments found');
         return [];
       }
 
@@ -136,11 +123,9 @@ export const fulfillmentService = {
           };
         })
       );
-      
-      console.log('Fetched pending fulfillments:', enrichedFulfillments);
+
       return enrichedFulfillments;
     } catch (error) {
-      console.error('Error in getPendingFulfillments:', error);
       return [];
     }
   },
@@ -203,8 +188,6 @@ export const fulfillmentService = {
   // Cancel all fulfillments for an order (only if all are pending)
   async cancelOrder(orderId: string): Promise<boolean> {
     try {
-      console.log('Attempting to cancel order:', orderId);
-      
       // First, get all fulfillments for this order with more details
       const { data: fulfillments, error: fetchError } = await supabase
         .from('order_fulfillments')
@@ -212,52 +195,38 @@ export const fulfillmentService = {
         .eq('order_id', orderId);
 
       if (fetchError) {
-        console.error('Error fetching fulfillments for cancellation:', fetchError);
         return false;
       }
 
       if (!fulfillments || fulfillments.length === 0) {
-        console.log('No fulfillments found for order:', orderId);
         return false;
       }
-
-      console.log('Found fulfillments for cancellation:', fulfillments);
 
       // Check if all fulfillments are pending and unshipped
       const allPending = fulfillments.every(f => f.status === 'pending');
       const allUnshipped = fulfillments.every(f => f.shipped_qty === 0);
-      
-      console.log('All pending?', allPending, 'All unshipped?', allUnshipped);
-      
+
       if (!allPending) {
-        console.error('Cannot cancel order - some fulfillments are not pending:', fulfillments.filter(f => f.status !== 'pending'));
         return false;
       }
-      
+
       if (!allUnshipped) {
-        console.error('Cannot cancel order - some fulfillments have shipped items:', fulfillments.filter(f => f.shipped_qty > 0));
         return false;
       }
 
       // Update all fulfillments to cancelled
-      console.log('Attempting to update fulfillments to cancelled...');
-      const { data: updateResult, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('order_fulfillments')
         .update({ status: 'cancelled' })
         .eq('order_id', orderId)
         .select();
 
       if (updateError) {
-        console.error('Error cancelling fulfillments:', updateError);
-        console.error('Error details:', JSON.stringify(updateError, null, 2));
         return false;
       }
 
-      console.log('Update result:', updateResult);
-      console.log('Successfully cancelled order:', orderId);
       return true;
     } catch (error) {
-      console.error('Error in cancelOrder:', error);
       return false;
     }
   },
@@ -265,30 +234,25 @@ export const fulfillmentService = {
   // Check if an order can be cancelled (all fulfillments are pending)
   async canCancelOrder(orderId: string): Promise<boolean> {
     try {
-      console.log('Checking if order can be cancelled:', orderId);
       const { data: fulfillments, error } = await supabase
         .from('order_fulfillments')
         .select('status, shipped_qty')
         .eq('order_id', orderId);
 
       if (error) {
-        console.error('Error checking if order can be cancelled:', error);
         return false;
       }
 
       if (!fulfillments || fulfillments.length === 0) {
-        console.log('No fulfillments found for order, cannot cancel:', orderId);
         return false;
       }
 
       const allPending = fulfillments.every(f => f.status === 'pending');
       const allUnshipped = fulfillments.every(f => f.shipped_qty === 0);
       const canCancel = allPending && allUnshipped;
-      
-      console.log('Can cancel order?', canCancel, 'fulfillments:', fulfillments);
+
       return canCancel;
     } catch (error) {
-      console.error('Error in canCancelOrder:', error);
       return false;
     }
   },

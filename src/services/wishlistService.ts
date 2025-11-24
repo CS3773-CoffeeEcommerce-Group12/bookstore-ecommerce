@@ -83,7 +83,6 @@ export const wishlistService = {
         } catch (itemError: any) {
           // Skip items that don't exist or are already in wishlist
           if (itemError.code === '23503' || itemError.code === '23505') {
-            console.log(`Skipping item ${item.id}: ${itemError.message}`);
             continue;
           }
           throw itemError;
@@ -94,7 +93,7 @@ export const wishlistService = {
       localStorage.removeItem(key);
       localStorage.removeItem('wishlist'); // Also remove non-user-specific
     } catch (error) {
-      console.error('Error migrating wishlist:', error);
+      // Silently handle migration errors
     }
   }
 };

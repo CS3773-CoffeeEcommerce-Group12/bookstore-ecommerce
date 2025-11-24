@@ -24,7 +24,6 @@ export const Navbar = () => {
         .maybeSingle();
 
       if (cartError) {
-        console.error('Error fetching cart:', cartError);
         return 0;
       }
 
@@ -36,7 +35,6 @@ export const Navbar = () => {
         .eq('cart_id', cart.id);
 
       if (itemsError) {
-        console.error('Error fetching cart items:', itemsError);
         return 0;
       }
 

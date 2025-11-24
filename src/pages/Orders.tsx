@@ -112,20 +112,15 @@ const Orders = () => {
     queryKey: ['user-cancellable-orders', user?.id],
     queryFn: async () => {
       if (!user || !myOrders || myOrders.length === 0) return {};
-      
-      console.log('Checking cancellable orders for user:', user.id);
-      console.log('Available orders:', myOrders);
-      
+
       const cancellableStatus: Record<string, boolean> = {};
       await Promise.all(
         myOrders.map(async (order) => {
           const canCancel = await fulfillmentService.canCancelOrder(order.id);
           cancellableStatus[order.id] = canCancel;
-          console.log(`Order ${order.id} can be cancelled:`, canCancel);
         })
       );
-      
-      console.log('Final cancellable status:', cancellableStatus);
+
       return cancellableStatus;
     },
     enabled: !!user && !!myOrders && myOrders.length > 0,
@@ -138,7 +133,6 @@ const Orders = () => {
     }
 
     try {
-      console.log('User cancelling order:', orderId);
       const success = await fulfillmentService.cancelOrder(orderId);
       if (success) {
         // Invalidate ALL relevant queries to refresh the UI immediately
@@ -147,27 +141,24 @@ const Orders = () => {
           queryClient.invalidateQueries({ queryKey: ['fulfillments'] }),
           queryClient.invalidateQueries({ queryKey: ['user-cancellable-orders'] }),
         ]);
-        
+
         // Force refetch of the specific fulfillment query
-        await queryClient.refetchQueries({ 
-          queryKey: ['fulfillments', 'by-order', user?.id] 
+        await queryClient.refetchQueries({
+          queryKey: ['fulfillments', 'by-order', user?.id]
         });
-        
+
         toast({
           title: 'Order Cancelled',
           description: 'Your order has been cancelled successfully.',
         });
-        console.log('Order cancelled successfully:', orderId);
       } else {
         toast({
           title: 'Cancellation Failed',
           description: 'Failed to cancel order. Please try again or contact support.',
           variant: 'destructive',
         });
-        console.error('Failed to cancel order:', orderId);
       }
     } catch (error) {
-      console.error('Error cancelling order:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: 'Error',
@@ -207,14 +198,8 @@ const Orders = () => {
   const getItemFulfillmentStatus = (orderId: string, itemId: string) => {
     const fulfillments = fulfillmentsByOrder?.[orderId] || [];
     const itemFulfillment = fulfillments.find(f => f.item_id === itemId);
-    
-    // Debug logging
-    console.log('Getting fulfillment status for order:', orderId, 'item:', itemId);
-    console.log('Available fulfillments:', fulfillments);
-    console.log('Found item fulfillment:', itemFulfillment);
-    
+
     if (!itemFulfillment) {
-      console.log('No fulfillment found, returning Ordered status');
       return {
         status: 'ordered',
         badge: 'Ordered',
@@ -224,10 +209,9 @@ const Orders = () => {
         shippedAt: null
       };
     }
-    
+
     const status = itemFulfillment.status;
-    console.log('Item fulfillment status:', status);
-    
+
     const configs = {
       pending: { badge: 'Pending', color: 'status-warning', icon: Clock },
       processing: { badge: 'Processing', color: 'status-info', icon: Package2 },
@@ -235,10 +219,9 @@ const Orders = () => {
       delivered: { badge: 'Delivered', color: 'status-success', icon: CheckCircle },
       cancelled: { badge: 'Cancelled', color: 'status-error', icon: XCircle },
     };
-    
+
     const config = configs[status as keyof typeof configs] || configs.pending;
-    console.log('Using config:', config);
-    
+
     return {
       status,
       ...config,
