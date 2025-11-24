@@ -44,9 +44,11 @@ const Orders = () => {
       const { data, error } = await supabase
         .from('orders')
         .select(`
-          *, 
+          *,
           order_items(*, items(*)),
-          shipping_addresses(*)
+          shipping_addresses(*),
+          discount_code,
+          discount_pct
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -66,9 +68,11 @@ const Orders = () => {
       const { data, error } = await supabase
         .from('orders')
         .select(`
-          *, 
+          *,
           order_items(*, items(*)),
-          shipping_addresses(*)
+          shipping_addresses(*),
+          discount_code,
+          discount_pct
         `)
         .order('created_at', { ascending: false });
 
@@ -501,8 +505,11 @@ const Orders = () => {
                   {(() => {
                     // Calculate item subtotal from order items (prices at time of purchase)
                     const itemSubtotal = order.order_items.reduce((sum, item) => sum + (item.price_cents * item.qty), 0);
-                    // Tax is 8.25% of subtotal
-                    const calculatedTax = Math.round(itemSubtotal * 0.0825);
+                    // Calculate discount amount if discount was applied
+                    const discountAmount = order.discount_pct ? Math.round(itemSubtotal * (order.discount_pct / 100)) : 0;
+                    const afterDiscount = itemSubtotal - discountAmount;
+                    // Tax is 8.25% of subtotal after discount
+                    const calculatedTax = Math.round(afterDiscount * 0.0825);
                     // Total should match order.total_cents
 
                     return (
@@ -511,6 +518,12 @@ const Orders = () => {
                           <span className="text-muted-foreground">Subtotal</span>
                           <span className="text-foreground">${(itemSubtotal / 100).toFixed(2)}</span>
                         </div>
+                        {order.discount_code && order.discount_pct && (
+                          <div className="flex justify-between text-sm text-accent font-medium">
+                            <span>Discount ({order.discount_code} - {order.discount_pct}%)</span>
+                            <span>-${(discountAmount / 100).toFixed(2)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Shipping</span>
                           <span className="text-foreground">$0.00</span>

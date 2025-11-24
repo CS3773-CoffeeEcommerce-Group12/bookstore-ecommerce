@@ -5,6 +5,7 @@ import { Item } from "@/types";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { Tag, TrendingDown, Grid3x3, List } from "lucide-react";
 import { BookCard } from '@/components/BookCard';
 
@@ -13,6 +14,8 @@ const Discounts = () => {
     q: "",
     sort: "discount",
     available: "1", // 0 = all, 1 = in stock, 2 = out of stock
+    priceMin: 0,
+    priceMax: 100,
   });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -43,6 +46,12 @@ const Discounts = () => {
           item.name.toLowerCase().includes(filters.q.toLowerCase())
         );
       }
+
+      // Apply price range filter
+      filteredItems = filteredItems.filter(item => {
+        const price = (item.sale_price_cents || item.price_cents) / 100; // Convert to dollars
+        return price >= filters.priceMin && price <= filters.priceMax;
+      });
 
       // Sort results
       if (filters.sort === "discount") {
@@ -96,44 +105,69 @@ const Discounts = () => {
         {/* Filters */}
         <Card className="bg-card border-border p-4">
           <form
-            className="flex flex-col sm:flex-row flex-wrap gap-3"
+            className="flex flex-col gap-4"
             onSubmit={handleSubmit}
           >
+            {/* Search Bar */}
             <input
               name="q"
               placeholder="Search discounted books..."
               value={filters.q}
               onChange={(e) => setFilters({ ...filters, q: e.target.value })}
-              className="flex-1 min-w-[200px] px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-accent"
+              className="w-full px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-accent"
             />
 
-            {/* SORT SELECT — FIXED */}
-            <select
-              id="sort"
-              name="sort"
-              aria-label="Sort discounts"
-              value={filters.sort}
-              onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
-              className="min-w-[180px] px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-accent"
-            >
-              <option value="discount">Best Discount</option>
-              <option value="price_low">Price: Low to High</option>
-              <option value="price_high">Price: High to Low</option>
-            </select>
+            {/* Dropdowns Row */}
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+              {/* SORT SELECT — FIXED */}
+              <select
+                id="sort"
+                name="sort"
+                aria-label="Sort discounts"
+                value={filters.sort}
+                onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
+                className="flex-1 min-w-[180px] px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-accent"
+              >
+                <option value="discount">Best Discount</option>
+                <option value="price_low">Price: Low to High</option>
+                <option value="price_high">Price: High to Low</option>
+              </select>
 
-            {/* AVAILABILITY SELECT — FIXED */}
-            <select
-              id="available"
-              name="available"
-              aria-label="Filter by availability"
-              value={filters.available}
-              onChange={(e) => setFilters({ ...filters, available: e.target.value })}
-              className="min-w-[160px] px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-accent"
-            >
-              <option value="1">In Stock Only</option>
-              <option value="0">All Books</option>
-              <option value="2">Out of Stock</option>
-            </select>
+              {/* AVAILABILITY SELECT — FIXED */}
+              <select
+                id="available"
+                name="available"
+                aria-label="Filter by availability"
+                value={filters.available}
+                onChange={(e) => setFilters({ ...filters, available: e.target.value })}
+                className="flex-1 min-w-[160px] px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-accent"
+              >
+                <option value="1">In Stock Only</option>
+                <option value="0">All Books</option>
+                <option value="2">Out of Stock</option>
+              </select>
+            </div>
+
+            {/* Price Range Filter */}
+            <div className="flex flex-col gap-2 p-3 bg-muted/30 rounded-lg border border-border">
+              <label className="text-sm font-medium text-foreground">
+                Price Range: ${filters.priceMin} - ${filters.priceMax}
+              </label>
+              <Slider
+                min={0}
+                max={100}
+                step={1}
+                value={[filters.priceMin, filters.priceMax]}
+                onValueChange={(vals) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    priceMin: vals[0],
+                    priceMax: vals[1],
+                  }))
+                }
+                className="mt-2"
+              />
+            </div>
           </form>
         </Card>
 

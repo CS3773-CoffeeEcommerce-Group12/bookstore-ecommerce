@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Users, Search, Edit, Save, X } from 'lucide-react';
+import { Users, Search, Edit, Save, X, Trash2, UserPlus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface UserWithRole {
   id: string;
@@ -20,6 +21,9 @@ export default function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [editData, setEditData] = useState({ full_name: '', role: '' });
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [newUserData, setNewUserData] = useState({ email: '', full_name: '', role: 'user' });
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users'],
@@ -68,7 +72,7 @@ export default function AdminUsers() {
     mutationFn: async ({ userId, role }: { userId: string; role: 'admin' | 'moderator' | 'user' }) => {
       // First, delete existing role
       await supabase.from('user_roles').delete().eq('user_id', userId);
-      
+
       // Then insert new role
       const { error } = await supabase
         .from('user_roles')
@@ -81,6 +85,36 @@ export default function AdminUsers() {
     },
     onError: (error: any) => {
       toast.error('Failed to update role: ' + error.message);
+    },
+  });
+
+  const deleteUsersMutation = useMutation({
+    mutationFn: async (userIds: string[]) => {
+      // Note: This will delete user roles and profile data
+      // The actual auth user will still exist in auth.users
+      // You may want to use Supabase's deleteUser() function via a secure admin endpoint
+
+      // Delete user roles first
+      const { error: rolesError } = await supabase
+        .from('user_roles')
+        .delete()
+        .in('user_id', userIds);
+      if (rolesError) throw rolesError;
+
+      // Delete profiles
+      const { error: profilesError } = await supabase
+        .from('profiles')
+        .delete()
+        .in('id', userIds);
+      if (profilesError) throw profilesError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast.success('Users removed successfully!');
+      setSelectedUsers(new Set());
+    },
+    onError: (error: any) => {
+      toast.error('Failed to remove users: ' + error.message);
     },
   });
 
@@ -103,6 +137,32 @@ export default function AdminUsers() {
     }
   };
 
+  const toggleSelectUser = (userId: string) => {
+    const newSelected = new Set(selectedUsers);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
+    } else {
+      newSelected.add(userId);
+    }
+    setSelectedUsers(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedUsers.size === filteredUsers?.length) {
+      setSelectedUsers(new Set());
+    } else {
+      setSelectedUsers(new Set(filteredUsers?.map(u => u.id) || []));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedUsers.size === 0) return;
+
+    if (confirm(`Are you sure you want to remove ${selectedUsers.size} user(s)? This will delete their profile and role data.`)) {
+      deleteUsersMutation.mutate(Array.from(selectedUsers));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -115,16 +175,33 @@ export default function AdminUsers() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Users</CardTitle>
-          <CardDescription className="flex items-center gap-2 mt-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-sm"
-            />
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <CardTitle>All Users</CardTitle>
+              <CardDescription className="flex items-center gap-2 mt-2">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="max-w-sm"
+                />
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              {selectedUsers.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDeleteSelected}
+                  disabled={deleteUsersMutation.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Remove ({selectedUsers.size})
+                </Button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -133,6 +210,13 @@ export default function AdminUsers() {
             </div>
           ) : filteredUsers && filteredUsers.length > 0 ? (
             <div className="space-y-2">
+              <div className="flex items-center gap-2 p-3 border-b">
+                <Checkbox
+                  checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+                <span className="text-sm font-medium">Select All ({filteredUsers.length})</span>
+              </div>
               {filteredUsers.map((user) => (
                 <Card key={user.id} className="p-4">
                   {editingUser === user.id ? (
@@ -178,11 +262,17 @@ export default function AdminUsers() {
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold">{user.full_name || 'No name set'}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Role: {user.user_roles[0]?.role || 'user'}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={selectedUsers.has(user.id)}
+                          onCheckedChange={() => toggleSelectUser(user.id)}
+                        />
+                        <div>
+                          <p className="font-semibold">{user.full_name || 'No name set'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Role: {user.user_roles[0]?.role || 'user'}
+                          </p>
+                        </div>
                       </div>
                       <Button
                         variant="outline"

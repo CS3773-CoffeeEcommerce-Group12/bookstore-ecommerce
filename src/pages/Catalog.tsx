@@ -133,24 +133,64 @@ const Catalog = () => {
         {/* Filters */}
         <Card className="bg-card border-border p-4">
           <form
-            className="flex flex-col sm:flex-row flex-wrap gap-3"
+            className="flex flex-col gap-4"
             onSubmit={handleSubmit}
           >
+            {/* Search Bar */}
             <input
               name="q"
               placeholder="Search by book name, author, or ISBN..."
               defaultValue={filters.q}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              className="flex-1 min-w-[200px] px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
+              className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
             />
 
-            {/* Price range filter */}
-            <div className="flex flex-col w-full sm:w-64">
-              <label className="text-sm text-muted-foreground mb-1">
-                Price Range (${filters.priceMin} - ${filters.priceMax})
+            {/* Dropdowns Row */}
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+              <label htmlFor="sort" className="sr-only">
+                Sort books by
               </label>
+              <select
+                id="sort"
+                name="sort"
+                aria-label="Sort books by"
+                value={filters.sort}
+                onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
+                className="flex-1 min-w-[200px] px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
+              >
+                <option value="created_at">Newest First</option>
+                <option value="name">Name (A-Z)</option>
+                <option value="price_low">Price: Low to High</option>
+                <option value="price_high">Price: High to Low</option>
+                <option value="stock_high">Quantity: High to Low</option>
+                <option value="stock_low">Quantity: Low to High</option>
+              </select>
 
+              <label htmlFor="available" className="sr-only">
+                Filter by availability
+              </label>
+              <select
+                id="available"
+                name="available"
+                aria-label="Filter by availability"
+                value={filters.available}
+                onChange={(e) =>
+                  setFilters({ ...filters, available: e.target.value })
+                }
+                className="flex-1 min-w-[160px] px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
+              >
+                <option value="0">All Books</option>
+                <option value="1">In Stock Only</option>
+                <option value="2">Out of Stock</option>
+              </select>
+            </div>
+
+            {/* Price Range Filter */}
+            <div className="flex flex-col gap-2 p-3 bg-muted/30 rounded-lg border border-border">
+              <label className="text-sm font-medium text-foreground">
+                Price Range: ${filters.priceMin} - ${filters.priceMax}
+              </label>
               <Slider
                 min={0}
                 max={100}
@@ -163,45 +203,9 @@ const Catalog = () => {
                     priceMax: vals[1],
                   }))
                 }
+                className="mt-2"
               />
             </div>
-
-            <label htmlFor="sort" className="sr-only">
-              Sort books by
-            </label>
-            <select
-              id="sort"
-              name="sort"
-              aria-label="Sort books by"
-              value={filters.sort}
-              onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
-              className="min-w-[200px] px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
-            >
-              <option value="created_at">Newest First</option>
-              <option value="name">Name (A-Z)</option>
-              <option value="price_low">Price: Low to High</option>
-              <option value="price_high">Price: High to Low</option>
-              <option value="stock_high">Quantity: High to Low</option>
-              <option value="stock_low">Quantity: Low to High</option>
-            </select>
-
-            <label htmlFor="available" className="sr-only">
-              Filter by availability
-            </label>
-            <select
-              id="available"
-              name="available"
-              aria-label="Filter by availability"
-              value={filters.available}
-              onChange={(e) =>
-                setFilters({ ...filters, available: e.target.value })
-              }
-              className="min-w-[160px] px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
-            >
-              <option value="0">All Books</option>
-              <option value="1">In Stock Only</option>
-              <option value="2">Out of Stock</option>
-            </select>
           </form>
         </Card>
 

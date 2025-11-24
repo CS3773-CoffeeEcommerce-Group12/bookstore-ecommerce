@@ -5,9 +5,10 @@ import { fulfillmentService } from '@/services/fulfillmentService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, ArrowUpDown, Package, Truck, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { ShoppingCart, ArrowUpDown, Package, Truck, CheckCircle, Clock, XCircle, Search } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { fulfillmentService as fs } from '@/services/fulfillmentService';
 
@@ -16,6 +17,8 @@ interface OrderWithItems {
   created_at: string;
   customer_email: string | null;
   total_cents: number;
+  discount_code: string | null;
+  discount_pct: number | null;
   order_items: Array<{
     qty: number;
     price_cents: number;
@@ -28,6 +31,7 @@ interface OrderWithItems {
 
 export default function AdminOrders() {
   const [sortBy, setSortBy] = useState<'date' | 'customer' | 'total'>('date');
+  const [orderSearch, setOrderSearch] = useState('');
   const queryClient = useQueryClient();
 
   const { data: orders, isLoading } = useQuery({
@@ -40,6 +44,8 @@ export default function AdminOrders() {
           created_at,
           customer_email,
           total_cents,
+          discount_code,
+          discount_pct,
           order_items (
             qty,
             price_cents,
@@ -175,6 +181,28 @@ export default function AdminOrders() {
     }
   };
 
+  // Filter function for order search
+  const filterOrders = (ordersToFilter: OrderWithItems[]) => {
+    if (!orderSearch.trim()) return ordersToFilter;
+
+    const searchLower = orderSearch.toLowerCase();
+    return ordersToFilter.filter(order => {
+      // Search by order ID
+      if (order.id.toLowerCase().includes(searchLower)) return true;
+
+      // Search by customer email
+      if (order.customer_email?.toLowerCase().includes(searchLower)) return true;
+
+      // Search by item names
+      const hasMatchingItem = order.order_items.some(orderItem =>
+        orderItem.items?.name?.toLowerCase().includes(searchLower)
+      );
+      if (hasMatchingItem) return true;
+
+      return false;
+    });
+  };
+
   const sortedOrders = orders ? [...orders].sort((a, b) => {
     switch (sortBy) {
       case 'customer':
@@ -236,23 +264,35 @@ export default function AdminOrders() {
             className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground flex items-center justify-center gap-2"
           >
             <Package className="h-5 w-5 md:h-4 md:w-4" />
-            <span className="hidden lg:inline">Ongoing ({ongoingOrders.length})</span>
+            <span className="hidden lg:inline">Ongoing ({filterOrders(ongoingOrders).length})</span>
           </TabsTrigger>
           <TabsTrigger
             value="completed"
             className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground flex items-center justify-center gap-2"
           >
             <CheckCircle className="h-5 w-5 md:h-4 md:w-4" />
-            <span className="hidden lg:inline">Completed ({completedOrders.length})</span>
+            <span className="hidden lg:inline">Completed ({filterOrders(completedOrders).length})</span>
           </TabsTrigger>
           <TabsTrigger
             value="cancelled"
             className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground flex items-center justify-center gap-2"
           >
             <XCircle className="h-5 w-5 md:h-4 md:w-4" />
-            <span className="hidden lg:inline">Cancelled ({cancelledOrders.length})</span>
+            <span className="hidden lg:inline">Cancelled ({filterOrders(cancelledOrders).length})</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Search bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search orders by ID, email, or item name..."
+            value={orderSearch}
+            onChange={(e) => setOrderSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
         <TabsContent value="ongoing">
           <div className="space-y-4">
@@ -260,8 +300,8 @@ export default function AdminOrders() {
               <div className="space-y-4">
                 {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-48" />)}
               </div>
-            ) : ongoingOrders.length > 0 ? (
-              ongoingOrders.map((order) => {
+            ) : filterOrders(ongoingOrders).length > 0 ? (
+              filterOrders(ongoingOrders).map((order) => {
                 const fulfillmentStatus = getOrderFulfillmentStatus(order.id);
                 const statusDisplay = getStatusDisplay(fulfillmentStatus.status);
                 const StatusIcon = statusDisplay.icon;
@@ -363,7 +403,43 @@ export default function AdminOrders() {
                         </div>
                       ))}
                     </div>
-                    
+
+                    {/* Order Summary */}
+                    <div className="mt-4 pt-4 border-t">
+                      <h4 className="font-semibold text-sm text-muted-foreground mb-2">ORDER SUMMARY</h4>
+                      <div className="space-y-1">
+                        {(() => {
+                          const itemSubtotal = order.order_items.reduce((sum, item) => sum + (item.price_cents * item.qty), 0);
+                          const discountAmount = order.discount_pct ? Math.round(itemSubtotal * (order.discount_pct / 100)) : 0;
+                          const afterDiscount = itemSubtotal - discountAmount;
+                          const calculatedTax = Math.round(afterDiscount * 0.0825);
+
+                          return (
+                            <>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Subtotal</span>
+                                <span className="text-foreground">${(itemSubtotal / 100).toFixed(2)}</span>
+                              </div>
+                              {order.discount_code && order.discount_pct && (
+                                <div className="flex justify-between text-sm text-accent font-medium">
+                                  <span>Discount ({order.discount_code} - {order.discount_pct}%)</span>
+                                  <span>-${(discountAmount / 100).toFixed(2)}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Tax (8.25%)</span>
+                                <span className="text-foreground">${(calculatedTax / 100).toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-sm font-bold pt-1 border-t">
+                                <span className="text-foreground">Total</span>
+                                <span className="text-accent">${(order.total_cents / 100).toFixed(2)}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
                     <div className="mt-4 pt-4 border-t">
                       <p className="text-sm text-muted-foreground">
                         {fulfillmentStatus.hasAny ? (
@@ -397,8 +473,8 @@ export default function AdminOrders() {
               <div className="space-y-4">
                 {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-48" />)}
               </div>
-            ) : completedOrders.length > 0 ? (
-              completedOrders.map((order) => {
+            ) : filterOrders(completedOrders).length > 0 ? (
+              filterOrders(completedOrders).map((order) => {
                 const fulfillmentStatus = getOrderFulfillmentStatus(order.id);
                 const statusDisplay = getStatusDisplay(fulfillmentStatus.status);
                 const StatusIcon = statusDisplay.icon;
@@ -461,6 +537,42 @@ export default function AdminOrders() {
                           </div>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Order Summary */}
+                    <div className="mt-4 pt-4 border-t">
+                      <h4 className="font-semibold text-sm text-muted-foreground mb-2">ORDER SUMMARY</h4>
+                      <div className="space-y-1">
+                        {(() => {
+                          const itemSubtotal = order.order_items.reduce((sum, item) => sum + (item.price_cents * item.qty), 0);
+                          const discountAmount = order.discount_pct ? Math.round(itemSubtotal * (order.discount_pct / 100)) : 0;
+                          const afterDiscount = itemSubtotal - discountAmount;
+                          const calculatedTax = Math.round(afterDiscount * 0.0825);
+
+                          return (
+                            <>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Subtotal</span>
+                                <span className="text-foreground">${(itemSubtotal / 100).toFixed(2)}</span>
+                              </div>
+                              {order.discount_code && order.discount_pct && (
+                                <div className="flex justify-between text-sm text-accent font-medium">
+                                  <span>Discount ({order.discount_code} - {order.discount_pct}%)</span>
+                                  <span>-${(discountAmount / 100).toFixed(2)}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Tax (8.25%)</span>
+                                <span className="text-foreground">${(calculatedTax / 100).toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-sm font-bold pt-1 border-t">
+                                <span className="text-foreground">Total</span>
+                                <span className="text-accent">${(order.total_cents / 100).toFixed(2)}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -486,8 +598,8 @@ export default function AdminOrders() {
               <div className="space-y-4">
                 {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-48" />)}
               </div>
-            ) : cancelledOrders.length > 0 ? (
-              cancelledOrders.map((order) => {
+            ) : filterOrders(cancelledOrders).length > 0 ? (
+              filterOrders(cancelledOrders).map((order) => {
                 const fulfillmentStatus = getOrderFulfillmentStatus(order.id);
                 const statusDisplay = getStatusDisplay(fulfillmentStatus.status);
                 const StatusIcon = statusDisplay.icon;
@@ -550,6 +662,42 @@ export default function AdminOrders() {
                           </div>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Order Summary */}
+                    <div className="mt-4 pt-4 border-t">
+                      <h4 className="font-semibold text-sm text-muted-foreground mb-2">ORDER SUMMARY</h4>
+                      <div className="space-y-1">
+                        {(() => {
+                          const itemSubtotal = order.order_items.reduce((sum, item) => sum + (item.price_cents * item.qty), 0);
+                          const discountAmount = order.discount_pct ? Math.round(itemSubtotal * (order.discount_pct / 100)) : 0;
+                          const afterDiscount = itemSubtotal - discountAmount;
+                          const calculatedTax = Math.round(afterDiscount * 0.0825);
+
+                          return (
+                            <>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Subtotal</span>
+                                <span className="text-foreground">${(itemSubtotal / 100).toFixed(2)}</span>
+                              </div>
+                              {order.discount_code && order.discount_pct && (
+                                <div className="flex justify-between text-sm text-accent font-medium">
+                                  <span>Discount ({order.discount_code} - {order.discount_pct}%)</span>
+                                  <span>-${(discountAmount / 100).toFixed(2)}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Tax (8.25%)</span>
+                                <span className="text-foreground">${(calculatedTax / 100).toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-sm font-bold pt-1 border-t">
+                                <span className="text-foreground">Total</span>
+                                <span className="text-accent">${(order.total_cents / 100).toFixed(2)}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

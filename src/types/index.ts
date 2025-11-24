@@ -47,6 +47,8 @@ export interface Order {
   customer_email: string | null;
   total_cents: number;
   shipping_address_id: string | null;
+  discount_code: string | null;
+  discount_pct: number | null;
   created_at: string;
 }
 
