@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, LayoutGrid, ShoppingCart, Package, BookOpen, Percent, BarChart2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
 interface AdminLayoutProps {
@@ -74,6 +74,12 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-[280px] p-0">
+            <SheetHeader className="px-4 pt-6 pb-4 border-b border-border">
+              <SheetTitle className="text-left text-primary">Admin Panel</SheetTitle>
+              <SheetDescription className="text-left">
+                Navigate admin sections
+              </SheetDescription>
+            </SheetHeader>
             <SidebarContent />
           </SheetContent>
         </Sheet>

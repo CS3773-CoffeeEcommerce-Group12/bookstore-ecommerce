@@ -372,8 +372,8 @@ const BookDetail = () => {
               {(() => {
                 const description =
                   book.description || enrichedData?.description || 'No description available.';
-                const isLong = description.length > 200;
-                const truncated = isLong ? description.slice(0, 200) + '...' : description;
+                const isLong = description.length > 300;
+                const truncated = isLong ? description.slice(0, 300) + '...' : description;
 
                 return (
                   <Collapsible open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
@@ -383,11 +383,10 @@ const BookDetail = () => {
                     </h3>
 
                     <div className="text-sm text-foreground/80 leading-relaxed">
-                      {!isDescriptionOpen && isLong ? (
-                        <p>{truncated}</p>
-                      ) : (
-                        <CollapsibleContent>
-                          <p>{description}</p>
+                      <p>{isDescriptionOpen ? description : truncated}</p>
+                      {isLong && (
+                        <CollapsibleContent forceMount className="hidden">
+                          {/* Hidden content for animation */}
                         </CollapsibleContent>
                       )}
                     </div>
@@ -474,12 +473,12 @@ const BookDetail = () => {
 
           {/* Right Sidebar - Price + Add to Cart */}
           <div className="lg:col-span-3 order-2 lg:order-last">
-            <div className="p-4 sm:p-6 bg-card/50 rounded-xl space-y-4 sm:space-y-6 lg:sticky lg:top-24">
+            <div className="p-4 sm:p-6 bg-card/50 rounded-xl space-y-4 sm:space-y-6 lg:sticky lg:top-24 relative overflow-hidden">
 
               {/* SALE BADGE */}
               {book.on_sale && book.sale_percentage && (
-                <div className="absolute -top-3 -right-3 bg-gradient-warm text-accent-foreground px-4 py-2 rounded-full text-sm font-bold shadow-lg z-10">
-                  {book.sale_percentage}% OFF SALE!
+                <div className="absolute top-2 right-2 bg-gradient-warm text-accent-foreground px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-lg z-10">
+                  {book.sale_percentage}% OFF
                 </div>
               )}
 

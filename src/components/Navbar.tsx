@@ -17,22 +17,33 @@ export const Navbar = () => {
     queryFn: async () => {
       if (!user) return 0;
 
-      const { data: cart } = await supabase
+      const { data: cart, error: cartError } = await supabase
         .from('carts')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (cartError) {
+        console.error('Error fetching cart:', cartError);
+        return 0;
+      }
 
       if (!cart) return 0;
 
-      const { data: items } = await supabase
+      const { data: items, error: itemsError } = await supabase
         .from('cart_items')
         .select('qty')
         .eq('cart_id', cart.id);
 
+      if (itemsError) {
+        console.error('Error fetching cart items:', itemsError);
+        return 0;
+      }
+
       return items?.reduce((sum, item) => sum + item.qty, 0) || 0;
     },
     enabled: !!user,
+    retry: false,
   });
 
   const menuItems = [

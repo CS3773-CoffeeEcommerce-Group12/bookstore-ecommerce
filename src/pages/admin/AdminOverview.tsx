@@ -135,13 +135,23 @@ export default function AdminOverview() {
         .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
 
       if (cartsError) throw cartsError;
+
+      // Also delete all wishlists
+      const { error: wishlistError } = await supabase
+        .from('wishlist')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (wishlistError) throw wishlistError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-      toast.success('All cart data has been cleared');
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      queryClient.invalidateQueries({ queryKey: ['cart-count'] });
+      toast.success('All cart and wishlist data has been cleared');
     },
     onError: (error: any) => {
-      toast.error('Failed to clear carts: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to clear carts and wishlists: ' + (error.message || 'Unknown error'));
     },
   });
 
@@ -333,7 +343,7 @@ export default function AdminOverview() {
               disabled={clearCartsMutation.isPending}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Clear All Shopping Carts
+              Clear All Shopping Carts & Wishlists
             </Button>
           </div>
         </CardContent>
