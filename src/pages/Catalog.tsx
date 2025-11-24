@@ -8,8 +8,16 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { BookCard } from '@/components/BookCard';
-import { Grid3x3, List, BookOpen } from 'lucide-react';
+import { Grid3x3, List, BookOpen, ChevronDown } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Catalog = () => {
   const { isAdmin } = useAuth();
@@ -146,30 +154,63 @@ const Catalog = () => {
               className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
             />
 
-            {/* Dropdowns Row */}
+            {/* Filters Row */}
             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
-              <label htmlFor="sort" className="sr-only">
-                Sort books by
-              </label>
-              <select
-                id="sort"
-                name="sort"
-                aria-label="Sort books by"
-                value={filters.sort}
-                onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
-                className="flex-1 min-w-[200px] px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
-              >
-                <option value="created_at">Newest First</option>
-                <option value="name">Name (A-Z)</option>
-                <option value="price_low">Price: Low to High</option>
-                <option value="price_high">Price: High to Low</option>
-                <option value="stock_high">Quantity: High to Low</option>
-                <option value="stock_low">Quantity: Low to High</option>
-              </select>
+              {/* Sort & Price Range Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex-1 min-w-[250px] justify-between font-normal"
+                  >
+                    <span>
+                      {filters.sort === "created_at" && "Newest First"}
+                      {filters.sort === "name" && "Name (A-Z)"}
+                      {filters.sort === "price_low" && "Price: Low to High"}
+                      {filters.sort === "price_high" && "Price: High to Low"}
+                      {filters.sort === "stock_low" && "Quantity: Low to High"}
+                      {filters.sort === "stock_high" && "Quantity: High to Low"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[300px]">
+                  <DropdownMenuRadioGroup value={filters.sort} onValueChange={(value) => setFilters({ ...filters, sort: value })}>
+                    <DropdownMenuRadioItem value="created_at">Newest First</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="name">Name (A-Z)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="price_low">Price: Low to High</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="price_high">Price: High to Low</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="stock_low">Quantity: Low to High</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="stock_high">Quantity: High to Low</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
 
-              <label htmlFor="available" className="sr-only">
-                Filter by availability
-              </label>
+                  <DropdownMenuSeparator />
+
+                  {/* Price Range inside dropdown */}
+                  <div className="px-2 py-3" onPointerDown={(e) => e.stopPropagation()}>
+                    <label className="text-sm font-medium mb-2 block">
+                      Price Range: ${filters.priceMin} - ${filters.priceMax}
+                    </label>
+                    <Slider
+                      min={0}
+                      max={100}
+                      step={1}
+                      minStepsBetweenThumbs={0}
+                      value={[filters.priceMin, filters.priceMax]}
+                      onValueChange={(vals) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          priceMin: vals[0],
+                          priceMax: vals[1],
+                        }))
+                      }
+                      className="mb-2"
+                    />
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Availability Dropdown */}
               <select
                 id="available"
                 name="available"
@@ -178,34 +219,12 @@ const Catalog = () => {
                 onChange={(e) =>
                   setFilters({ ...filters, available: e.target.value })
                 }
-                className="flex-1 min-w-[160px] px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
+                className="flex-1 min-w-[160px] px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring cursor-pointer"
               >
                 <option value="0">All Books</option>
                 <option value="1">In Stock Only</option>
                 <option value="2">Out of Stock</option>
               </select>
-            </div>
-
-            {/* Price Range Filter */}
-            <div className="flex flex-col gap-2 p-3 bg-muted/30 rounded-lg border border-border">
-              <label className="text-sm font-medium text-foreground">
-                Price Range: ${filters.priceMin} - ${filters.priceMax}
-              </label>
-              <Slider
-                min={0}
-                max={100}
-                step={1}
-                minStepsBetweenThumbs={0}
-                value={[filters.priceMin, filters.priceMax]}
-                onValueChange={(vals) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    priceMin: vals[0],
-                    priceMax: vals[1],
-                  }))
-                }
-                className="mt-2"
-              />
             </div>
           </form>
         </Card>
