@@ -9,6 +9,7 @@ interface BookCardProps {
   image: string;
   stock: number;
   onSale?: boolean;
+  salePercentage?: number;
   compact?: boolean;
 }
 
@@ -20,6 +21,7 @@ export function BookCard({
   image,
   stock,
   onSale = false,
+  salePercentage,
   compact = false,
 }: BookCardProps) {
   return (
@@ -55,9 +57,9 @@ export function BookCard({
         )}
 
         {/* SALE BADGE */}
-        {onSale && (
-          <Badge className="absolute top-2 left-2 bg-accent text-accent-foreground shadow-md">
-            Sale
+        {onSale && salePercentage && (
+          <Badge className="absolute top-2 left-2 bg-accent text-accent-foreground shadow-md font-bold">
+            {Math.round(salePercentage)}% OFF
           </Badge>
         )}
       </div>

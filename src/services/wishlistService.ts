@@ -12,6 +12,10 @@ export const wishlistService = {
           id,
           name,
           price_cents,
+          sale_price_cents,
+          sale_percentage,
+          on_sale,
+          stock,
           img_url,
           author
         )

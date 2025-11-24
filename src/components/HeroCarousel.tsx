@@ -128,7 +128,7 @@ export const HeroCarousel = () => {
                       <img
                         src={book.img_url || "/placeholder.svg"}
                         alt={book.name}
-                        className="h-[280px] sm:h-[320px] object-contain rounded-lg"
+                        className="h-[280px] sm:h-[320px] w-auto object-cover rounded-lg aspect-[2/3]"
                       />
                     </div>
                   </div>
@@ -215,7 +215,7 @@ export const HeroCarousel = () => {
                       <img
                         src={book.img_url || "/placeholder.svg"}
                         alt={book.name}
-                        className="h-[380px] lg:h-[420px] object-contain rounded-lg"
+                        className="h-[380px] lg:h-[420px] w-auto object-cover rounded-lg aspect-[2/3]"
                       />
                     </div>
                   </div>

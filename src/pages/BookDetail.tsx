@@ -708,11 +708,11 @@ const BookDetail = () => {
                 <Link key={item.id} to={`/book/${item.id}`}>
                   <div className="group bg-card/50 border border-border rounded-lg p-4 hover:shadow-lg hover:-translate-y-1 transition-all">
                     {item.img_url && (
-                      <div className="overflow-hidden rounded-md mb-3">
+                      <div className="overflow-hidden rounded-md mb-3 aspect-[2/3]">
                         <img
                           src={item.img_url}
                           alt={item.name}
-                          className="w-full h-40 object-cover group-hover:scale-110 transition-transform"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                         />
                       </div>
                     )}

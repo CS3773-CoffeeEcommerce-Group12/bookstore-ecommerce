@@ -4,13 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { User, ShoppingCart, MapPin, LogOut, Shield } from 'lucide-react';
+import { User, ShoppingCart, MapPin, LogOut, Shield, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import ShippingAddressManager from '@/components/ShippingAddressManager';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Account = () => {
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
 
   if (!user) {
     navigate('/auth');
@@ -21,6 +25,22 @@ const Account = () => {
     await signOut();
     toast.success('Signed out');
     navigate('/');
+  };
+
+  const handleUpdateName = async () => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { full_name: fullName }
+      });
+
+      if (error) throw error;
+
+      toast.success('Name updated successfully!');
+      setIsEditingName(false);
+    } catch (error) {
+      toast.error('Failed to update name');
+      console.error(error);
+    }
   };
 
   return (
@@ -127,9 +147,37 @@ const Account = () => {
                         <label className="text-sm font-medium text-muted-foreground">
                           Full Name
                         </label>
-                        <p className="text-foreground">
-                          {user.user_metadata?.full_name || 'Not set'}
-                        </p>
+                        {isEditingName ? (
+                          <div className="flex gap-2 mt-1">
+                            <input
+                              type="text"
+                              value={fullName}
+                              onChange={(e) => setFullName(e.target.value)}
+                              className="flex-1 px-3 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
+                              placeholder="Enter your full name"
+                            />
+                            <Button onClick={handleUpdateName} size="sm" className="btn-primary">
+                              Save
+                            </Button>
+                            <Button onClick={() => setIsEditingName(false)} size="sm" variant="outline">
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-foreground">
+                              {user.user_metadata?.full_name || 'Not set'}
+                            </p>
+                            <Button
+                              onClick={() => setIsEditingName(true)}
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">
@@ -153,12 +201,6 @@ const Account = () => {
                           {new Date(user.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                    </div>
-                    
-                    <div className="pt-4">
-                      <p className="text-sm text-muted-foreground">
-                        To update your profile information, please contact support.
-                      </p>
                     </div>
                   </CardContent>
                 </Card>

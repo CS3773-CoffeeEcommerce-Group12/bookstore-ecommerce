@@ -123,6 +123,16 @@ const Wishlist = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
             {wishlistData.map((wishlistItem: any) => {
               const item = wishlistItem.items;
+
+              // Calculate display price and original price for sale items
+              const displayPrice = item.sale_price_cents
+                ? `$${(item.sale_price_cents / 100).toFixed(2)}`
+                : `$${(item.price_cents / 100).toFixed(2)}`;
+
+              const originalPrice = item.sale_price_cents
+                ? `$${(item.price_cents / 100).toFixed(2)}`
+                : undefined;
+
               return (
                 <div key={wishlistItem.id} className="relative group">
 
@@ -134,7 +144,7 @@ const Wishlist = () => {
                     onClick={() => removeFromWishlist(item.id)}
                     disabled={removeMutation.isPending}
                     className="
-                      absolute top-2 right-2 z-20
+                      absolute bottom-2 right-2 z-20
                       bg-white/90 dark:bg-black/80
                       border border-border rounded-full
                       p-1 transition hover:bg-accent hover:text-accent-foreground
@@ -149,9 +159,12 @@ const Wishlist = () => {
                     <BookCard
                       title={item.name}
                       author={item.author || "Unknown Author"}
-                      price={`$${(item.price_cents / 100).toFixed(2)}`}
+                      price={displayPrice}
+                      originalPrice={originalPrice}
                       image={item.img_url}
-                      stock={999}
+                      stock={item.stock}
+                      onSale={item.on_sale || false}
+                      salePercentage={item.sale_percentage}
                       compact={true}
                     />
                   </Link>

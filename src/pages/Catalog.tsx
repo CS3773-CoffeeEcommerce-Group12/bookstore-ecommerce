@@ -159,29 +159,26 @@ const Catalog = () => {
               {/* Sort & Price Range Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="flex-1 min-w-[250px] justify-between font-normal"
-                  >
+                  <button type="button" className="flex-1 min-w-[250px] px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring cursor-pointer text-left flex items-center justify-between">
                     <span>
                       {filters.sort === "created_at" && "Newest First"}
                       {filters.sort === "name" && "Name (A-Z)"}
-                      {filters.sort === "price_low" && "Price: Low to High"}
-                      {filters.sort === "price_high" && "Price: High to Low"}
                       {filters.sort === "stock_low" && "Quantity: Low to High"}
                       {filters.sort === "stock_high" && "Quantity: High to Low"}
+                      {filters.sort === "price_low" && "Price: Low to High"}
+                      {filters.sort === "price_high" && "Price: High to Low"}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-50" />
-                  </Button>
+                  </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-[300px]">
                   <DropdownMenuRadioGroup value={filters.sort} onValueChange={(value) => setFilters({ ...filters, sort: value })}>
                     <DropdownMenuRadioItem value="created_at">Newest First</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="name">Name (A-Z)</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="price_low">Price: Low to High</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="price_high">Price: High to Low</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="stock_low">Quantity: Low to High</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="stock_high">Quantity: High to Low</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="price_low">Price: Low to High</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="price_high">Price: High to Low</DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
 
                   <DropdownMenuSeparator />
@@ -287,23 +284,17 @@ const Catalog = () => {
 
                   return (
                     <Link key={item.id} to={`/book/${item.id}`}>
-                      <div className="relative">
-                        {item.on_sale && item.sale_percentage && (
-                          <div className="absolute top-2 left-2 z-10 bg-accent text-accent-foreground px-2 py-1 rounded-md text-xs font-bold shadow-lg">
-                            {Math.round(item.sale_percentage)}% OFF
-                          </div>
-                        )}
-                        <BookCard
-                          title={item.name}
-                          author={item.author || 'Unknown Author'}
-                          price={displayPrice}
-                          originalPrice={originalPrice}
-                          image={item.img_url || '/placeholder.svg'}
-                          stock={item.stock}
-                          onSale={item.on_sale || false}
-                          compact={true}
-                        />
-                      </div>
+                      <BookCard
+                        title={item.name}
+                        author={item.author || 'Unknown Author'}
+                        price={displayPrice}
+                        originalPrice={originalPrice}
+                        image={item.img_url || '/placeholder.svg'}
+                        stock={item.stock}
+                        onSale={item.on_sale || false}
+                        salePercentage={item.sale_percentage}
+                        compact={true}
+                      />
                     </Link>
                   );
                 })}
@@ -381,11 +372,11 @@ const Catalog = () => {
                                   </span>
                                 )}
                               </div>
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-sm">
                                 {item.stock > 0 ? (
-                                  <span className="text-success">In Stock: {item.stock}</span>
+                                  <span className="bg-success/10 text-success px-2 py-1 rounded-md font-medium">In Stock: {item.stock}</span>
                                 ) : (
-                                  <span className="text-destructive">Out of Stock</span>
+                                  <span className="bg-destructive/10 text-destructive px-2 py-1 rounded-md font-medium">Out of Stock</span>
                                 )}
                               </div>
                             </div>
