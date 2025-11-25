@@ -32,6 +32,7 @@ interface OrderWithItems {
 export default function AdminOrders() {
   const [sortBy, setSortBy] = useState<'date' | 'customer' | 'total'>('date');
   const [orderSearch, setOrderSearch] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
   const queryClient = useQueryClient();
 
   const { data: orders, isLoading } = useQuery({
@@ -181,26 +182,47 @@ export default function AdminOrders() {
     }
   };
 
-  // Filter function for order search
+  // Filter function for order search and date
   const filterOrders = (ordersToFilter: OrderWithItems[]) => {
-    if (!orderSearch.trim()) return ordersToFilter;
+    let filtered = ordersToFilter;
 
-    const searchLower = orderSearch.toLowerCase();
-    return ordersToFilter.filter(order => {
-      // Search by order ID
-      if (order.id.toLowerCase().includes(searchLower)) return true;
+    // Text search filter
+    if (orderSearch.trim()) {
+      const searchLower = orderSearch.toLowerCase();
+      filtered = filtered.filter(order => {
+        // Search by order ID
+        if (order.id.toLowerCase().includes(searchLower)) return true;
 
-      // Search by customer email
-      if (order.customer_email?.toLowerCase().includes(searchLower)) return true;
+        // Search by customer email
+        if (order.customer_email?.toLowerCase().includes(searchLower)) return true;
 
-      // Search by item names
-      const hasMatchingItem = order.order_items.some(orderItem =>
-        orderItem.items?.name?.toLowerCase().includes(searchLower)
-      );
-      if (hasMatchingItem) return true;
+        // Search by item names
+        const hasMatchingItem = order.order_items.some(orderItem =>
+          orderItem.items?.name?.toLowerCase().includes(searchLower)
+        );
+        if (hasMatchingItem) return true;
 
-      return false;
-    });
+        return false;
+      });
+    }
+
+    // Date filter
+    if (dateFilter.trim()) {
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.created_at);
+        const dateStr = orderDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        const monthStr = dateStr.substring(0, 7); // YYYY-MM
+        const dayStr = dateStr.substring(8, 10); // DD
+
+        // Check if filter matches full date, month, or day
+        return dateStr.includes(dateFilter) ||
+               monthStr.includes(dateFilter) ||
+               dayStr === dateFilter ||
+               orderDate.toLocaleDateString().toLowerCase().includes(dateFilter.toLowerCase());
+      });
+    }
+
+    return filtered;
   };
 
   const sortedOrders = orders ? [...orders].sort((a, b) => {
@@ -282,15 +304,24 @@ export default function AdminOrders() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Search bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* Search and Filter bar */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search orders by ID, email, or item name..."
+              value={orderSearch}
+              onChange={(e) => setOrderSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
           <Input
             type="text"
-            placeholder="Search orders by ID, email, or item name..."
-            value={orderSearch}
-            onChange={(e) => setOrderSearch(e.target.value)}
-            className="pl-10"
+            placeholder="Filter by date (YYYY-MM-DD, YYYY-MM, or DD)"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="w-80"
           />
         </div>
 

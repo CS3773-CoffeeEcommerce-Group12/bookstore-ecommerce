@@ -32,6 +32,7 @@ import { PageHeader } from '@/components/PageHeader';
 
 const Orders = () => {
   const [orderSearch, setOrderSearch] = useState(""); // added search bar state
+  const [dateFilter, setDateFilter] = useState('');
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -263,26 +264,47 @@ const Orders = () => {
     return fulfillments.length > 0 && fulfillments.every(f => f.status === 'cancelled');
   });
 
-  // Filter function for order search
+  // Filter function for order search and date
   const filterOrders = (orders: OrderType[]) => {
-    if (!orderSearch.trim()) return orders;
+    let filtered = orders;
 
-    const searchLower = orderSearch.toLowerCase();
-    return orders.filter(order => {
-      // Search by order ID
-      if (order.id.toLowerCase().includes(searchLower)) return true;
+    // Text search filter
+    if (orderSearch.trim()) {
+      const searchLower = orderSearch.toLowerCase();
+      filtered = filtered.filter(order => {
+        // Search by order ID
+        if (order.id.toLowerCase().includes(searchLower)) return true;
 
-      // Search by customer email (if admin)
-      if (order.customer_email?.toLowerCase().includes(searchLower)) return true;
+        // Search by customer email (if admin)
+        if (order.customer_email?.toLowerCase().includes(searchLower)) return true;
 
-      // Search by item names
-      const hasMatchingItem = order.order_items?.some(orderItem =>
-        orderItem.items?.name?.toLowerCase().includes(searchLower)
-      );
-      if (hasMatchingItem) return true;
+        // Search by item names
+        const hasMatchingItem = order.order_items?.some(orderItem =>
+          orderItem.items?.name?.toLowerCase().includes(searchLower)
+        );
+        if (hasMatchingItem) return true;
 
-      return false;
-    });
+        return false;
+      });
+    }
+
+    // Date filter
+    if (dateFilter.trim()) {
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.created_at);
+        const dateStr = orderDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        const monthStr = dateStr.substring(0, 7); // YYYY-MM
+        const dayStr = dateStr.substring(8, 10); // DD
+
+        // Check if filter matches full date, month, or day
+        return dateStr.includes(dateFilter) ||
+               monthStr.includes(dateFilter) ||
+               dayStr === dateFilter ||
+               orderDate.toLocaleDateString().toLowerCase().includes(dateFilter.toLowerCase());
+      });
+    }
+
+    return filtered;
   };
 
   const renderDeliveryStatusSteps = (currentStep: number) => {
@@ -643,14 +665,21 @@ const Orders = () => {
               </TabsTrigger>
             </TabsList>
 
-            {/* Search bar for filtering orders */}
-            <div className="mb-4">
+            {/* Search and Filter bar */}
+            <div className="mb-4 flex gap-2">
               <input
                 type="text"
                 placeholder="Search orders by ID, email, or item name..."
                 value={orderSearch}
                 onChange={(e) => setOrderSearch(e.target.value)}
-                className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
+                className="flex-1 px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
+              />
+              <input
+                type="text"
+                placeholder="Filter by date (YYYY-MM-DD, YYYY-MM, or DD)"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-80 px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:ring-2 focus:ring-ring"
               />
             </div>
 
