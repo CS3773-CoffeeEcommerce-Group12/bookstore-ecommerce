@@ -40,7 +40,7 @@ export default function AdminOrders() {
   const queryClient = useQueryClient();
 
   const { data: orders, isLoading } = useQuery({
-    queryKey: ['admin-orders'],
+    queryKey: ['orders', 'admin'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
@@ -253,7 +253,7 @@ export default function AdminOrders() {
   // Categorize orders by their fulfillment status
   const ongoingOrders = sortedOrders.filter((order) => {
     const fulfillmentStatus = getOrderFulfillmentStatus(order.id);
-    return ['pending', 'processing', 'shipped'].includes(fulfillmentStatus.status);
+    return ['none', 'pending', 'processing', 'shipped', 'mixed'].includes(fulfillmentStatus.status);
   });
 
   const completedOrders = sortedOrders.filter((order) => {
